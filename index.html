@@ -463,7 +463,7 @@
       );
 
       // --- 共通レンダー関数 (入力フォーム) ---
-      const renderInputForm = (title, headerColor, bgColor, icon, questionTitle, hour, setHour, minute, setMinute, textValue, setTextValue, inputPlaceholder, targetMicType, handleNext, isReady) => {
+      const renderInputForm = (title, headerColor, bgColor, icon, questionTitle, hour, setHour, minute, setMinute, textValue, setTextValue, inputPlaceholder, targetMicType, handleNext, isReady, extraDescription = null) => {
         return (
           <div className="min-h-screen bg-blue-50 p-4 md:p-8 flex items-center justify-center py-10">
             <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-0 border-4 border-blue-200 overflow-hidden flex flex-col">
@@ -476,18 +476,21 @@
                     <TimeSelect hour={hour} setHour={setHour} minute={minute} setMinute={setMinute} />
                     
                     {setTextValue && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <input 
-                          type="text" value={textValue} onChange={(e) => setTextValue(e.target.value)}
-                          placeholder={inputPlaceholder}
-                          className="flex-1 p-4 border-2 border-gray-300 rounded-xl font-bold text-lg"
-                        />
-                        <button 
-                          onClick={() => startJaListening(targetMicType)} disabled={activeMic !== null}
-                          className={`p-4 rounded-xl shadow-md transition flex-shrink-0 ${activeMic === targetMicType ? 'bg-red-500 mic-pulse text-white' : 'bg-white border-2 border-gray-400 text-gray-600 hover:bg-gray-100'}`}
-                        >
-                          <span className="text-2xl">🎤</span>
-                        </button>
+                      <div className="flex flex-col gap-2 mt-2">
+                        {extraDescription && <p className="text-sm md:text-base text-gray-700 font-bold bg-white/70 p-2 rounded inline-block w-fit">{extraDescription}</p>}
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="text" value={textValue} onChange={(e) => setTextValue(e.target.value)}
+                            placeholder={inputPlaceholder}
+                            className="flex-1 p-4 border-2 border-gray-300 rounded-xl font-bold text-lg"
+                          />
+                          <button 
+                            onClick={() => startJaListening(targetMicType)} disabled={activeMic !== null}
+                            className={`p-4 rounded-xl shadow-md transition flex-shrink-0 ${activeMic === targetMicType ? 'bg-red-500 mic-pulse text-white' : 'bg-white border-2 border-gray-400 text-gray-600 hover:bg-gray-100'}`}
+                          >
+                            <span className="text-2xl">🎤</span>
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -673,7 +676,7 @@
 
       if (step === 'INPUT_ACTIVITY') {
         const isReady = jaActivity.trim() && jaActivity !== "きいています...";
-        return renderInputForm("りそうの日曜日をつくろう (3/4)", "bg-green-500", "bg-green-50", "🏃", "午前中に したいこと", activityHour, setActivityHour, activityMinute, setActivityMinute, jaActivity, setJaActivity, "なにをする？ (例: ゲーム)", "activity", () => handleTranslate('activity'), isReady);
+        return renderInputForm("りそうの日曜日をつくろう (3/4)", "bg-green-500", "bg-green-50", "🏃", "午前中に したいこと", activityHour, setActivityHour, activityMinute, setActivityMinute, jaActivity, setJaActivity, "なにをする？ (例: ゲームをする)", "activity", () => handleTranslate('activity'), isReady, "※「〜をする」というふうに書いてね！");
       }
       if (step === 'SPEAK_ACTIVITY') {
         const sentence = `I ${engActivity} at ${formatTime(activityHour, activityMinute)}.`;
