@@ -2,21 +2,15 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>えいごではなそう！</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>えいごではなそう！ Perfect Sunday</title>
   
-  <!-- Tailwind CSSの読み込み -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- ReactとReactDOMの読み込み -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  
-  <!-- ブラウザ上でReact(JSX)を動かすためのBabel -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
-    /* アニメーション用のCSS */
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
@@ -24,894 +18,1549 @@
     .animate-fade-in-up {
       animation: fadeInUp 0.6s ease-out forwards;
     }
-    .mic-pulse {
-      animation: pulse 1.5s infinite;
+    @keyframes bounceIn {
+      0% { transform: scale(0.1); opacity: 0; }
+      60% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
     }
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-      70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    .animate-bounce-in {
+      animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
-    /* カスタムスクロールバー */
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 8px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #f1f1f1; 
-      border-radius: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #c1c1c1; 
-      border-radius: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #a8a8a8; 
+    * {
+      -webkit-tap-highlight-color: transparent;
     }
   </style>
 </head>
-<body class="bg-amber-50 font-sans text-gray-800">
-  <!-- ここにアプリが表示されます -->
+<body class="bg-blue-50 font-sans touch-manipulation">
   <div id="root"></div>
 
-  <!-- アプリのプログラム -->
   <script type="text/babel">
-    const { useState, useEffect, useCallback } = React;
+    const { useState, useEffect, useCallback, useRef, useMemo } = React;
 
-    // --- 完全リニューアルされた新モンスターデータ (全30種類) ---
     const MONSTERS = [
-      { id: 1, name: "ほしぞらドラゴン", emoji: "🐲", color: "bg-indigo-200" },
-      { id: 2, name: "にんじゃキャット", emoji: "🐱", color: "bg-gray-300" },
-      { id: 3, name: "ゆうしゃドッグ", emoji: "🐶", color: "bg-red-200" },
-      { id: 4, name: "うちゅうひこうしウサギ", emoji: "🐰", color: "bg-blue-100" },
-      { id: 5, name: "まほうつかいフクロウ", emoji: "🦉", color: "bg-purple-200" },
-      { id: 6, name: "たんていキツネ", emoji: "🦊", color: "bg-amber-200" },
-      { id: 7, name: "かいぞくペンギン", emoji: "🐧", color: "bg-cyan-200" },
-      { id: 8, name: "はかせクマ", emoji: "🐻", color: "bg-stone-300" },
-      { id: 9, name: "ひこうきライオン", emoji: "🦁", color: "bg-sky-200" },
-      { id: 10, name: "しょうぼうしゾウ", emoji: "🐘", color: "bg-red-400" },
-      { id: 11, name: "けいさつかんパンダ", emoji: "🐼", color: "bg-slate-200" },
-      { id: 12, name: "ケーキしょくにんネズミ", emoji: "🐭", color: "bg-pink-100" },
-      { id: 13, name: "レーサーカメ", emoji: "🐢", color: "bg-green-300" },
-      { id: 14, name: "コックさんブタ", emoji: "🐷", color: "bg-rose-200" },
-      { id: 15, name: "アイドルハムスター", emoji: "🐹", color: "bg-fuchsia-200" },
-      { id: 16, name: "サッカーせんしゅウマ", emoji: "🐴", color: "bg-lime-200" },
-      { id: 17, name: "はなやさんシカ", emoji: "🦌", color: "bg-emerald-200" },
-      { id: 18, name: "おんがくかカエル", emoji: "🐸", color: "bg-teal-200" },
-      { id: 19, name: "だいくさんゴリラ", emoji: "🦍", color: "bg-amber-400" },
-      { id: 20, name: "マジシャンタコ", emoji: "🐙", color: "bg-violet-300" },
-      { id: 21, name: "うちゅうじんクラゲ", emoji: "🪼", color: "bg-cyan-100" },
-      { id: 22, name: "きしオオカミ", emoji: "🐺", color: "bg-slate-300" },
-      { id: 23, name: "とけいやさんワシ", emoji: "🦅", color: "bg-orange-200" },
-      { id: 24, name: "しゃしんかカメレオン", emoji: "🦎", color: "bg-green-200" },
-      { id: 25, name: "パイロットハト", emoji: "🕊️", color: "bg-sky-100" },
-      { id: 26, name: "びようしハリネズミ", emoji: "🦔", color: "bg-pink-200" },
-      { id: 27, name: "やきゅうせんしゅトラ", emoji: "🐯", color: "bg-yellow-300" },
-      { id: 28, name: "ユーチューバーサル", emoji: "🐒", color: "bg-red-100" },
-      { id: 29, name: "バレリーナハクチョウ", emoji: "🦢", color: "bg-purple-100" },
-      { id: 30, name: "スーパーヒーローヒョウ", emoji: "🐆", color: "bg-yellow-400" }
+      { id: 1, name: "勇気のライオン", emoji: "🦁", color: "bg-orange-200" },
+      { id: 2, name: "笑顔のドラゴン", emoji: "🐉", color: "bg-green-200" },
+      { id: 3, name: "星の妖精", emoji: "🧚", color: "bg-yellow-200" },
+      { id: 4, name: "幸運のユニコーン", emoji: "🦄", color: "bg-pink-200" },
+      { id: 5, name: "知恵のフクロウ", emoji: "🦉", color: "bg-blue-200" },
+      { id: 6, name: "元気なウサギ", emoji: "🐰", color: "bg-red-200" },
+      { id: 7, name: "仲良しキツネ", emoji: "🦊", color: "bg-orange-300" },
+      { id: 8, name: "のんびりパンダ", emoji: "🐼", color: "bg-gray-200" },
+      { id: 9, name: "優しいコアラ", emoji: "🐨", color: "bg-gray-300" },
+      { id: 10, name: "希望のトラ", emoji: "🐯", color: "bg-yellow-300" },
+      { id: 11, name: "歌うカエル", emoji: "🐸", color: "bg-green-300" },
+      { id: 12, name: "踊るペンギン", emoji: "🐧", color: "bg-blue-300" },
+      { id: 13, name: "夢見るイルカ", emoji: "🐬", color: "bg-cyan-200" },
+      { id: 14, name: "長寿のカメ", emoji: "🐢", color: "bg-green-400" },
+      { id: 15, name: "幸せのテントウムシ", emoji: "🐞", color: "bg-red-300" },
+      { id: 16, name: "輝くチョウ", emoji: "🦋", color: "bg-blue-400" },
+      { id: 17, name: "ピヨピヨひよこ", emoji: "🐥", color: "bg-yellow-400" },
+      { id: 18, name: "力強いT-レックス", emoji: "🦖", color: "bg-green-500" },
+      { id: 19, name: "穏やかなブラキオサウルス", emoji: "🦕", color: "bg-blue-500" },
+      { id: 20, name: "華麗なクジャク", emoji: "🦚", color: "bg-emerald-300" },
+      { id: 21, name: "おしゃべりオウム", emoji: "🦜", color: "bg-red-400" },
+      { id: 22, name: "優雅なハクチョウ", emoji: "🦢", color: "bg-gray-100" },
+      { id: 23, name: "情熱のフラミンゴ", emoji: "🦩", color: "bg-pink-300" },
+      { id: 24, name: "まじめなハリネズミ", emoji: "🦔", color: "bg-amber-200" },
+      { id: 25, name: "遊び好きなラッコ", emoji: "🦦", color: "bg-orange-100" },
+      { id: 26, name: "準備万端リス", emoji: "🐿️", color: "bg-amber-300" },
+      { id: 27, name: "光る流れ星", emoji: "🌟", color: "bg-yellow-100" },
+      { id: 28, name: "きらきら魔法", emoji: "✨", color: "bg-yellow-50" },
+      { id: 29, name: "ぽかぽか太陽", emoji: "☀️", color: "bg-orange-50" },
+      { id: 30, name: "ふんわり雲", emoji: "☁️", color: "bg-blue-50" }
     ];
 
-    // よくある食べ物の簡易辞書
-    const FOOD_DICTIONARY = {
-      "パン": "bread", "ぱん": "bread", "食パン": "toast", "トースト": "toast",
-      "ごはん": "rice", "ご飯": "rice", "お米": "rice",
-      "おにぎり": "rice balls", "おむすび": "rice balls",
-      "りんご": "apples", "リンゴ": "apples", "林檎": "apples",
-      "バナナ": "bananas", "ばなな": "bananas",
-      "たまご": "eggs", "卵": "eggs", "玉子": "eggs", "目玉焼き": "fried eggs",
-      "サラダ": "salad", "スープ": "soup",
-      "味噌汁": "miso soup", "みそしる": "miso soup",
-      "シリアル": "cereal", "コーンフレーク": "cereal",
-      "ヨーグルト": "yogurt", "牛乳": "milk", "ミルク": "milk", "チーズ": "cheese",
-      "肉": "meat", "お肉": "meat", "ソーセージ": "sausages", "ウインナー": "sausages", "ベーコン": "bacon",
-      "魚": "fish", "お魚": "fish", "焼き魚": "grilled fish",
-      "ホットケーキ": "pancakes", "パンケーキ": "pancakes",
-      "納豆": "natto", "なっとう": "natto",
-      "うどん": "udon", "パスタ": "pasta", "ラーメン": "ramen",
-      "カレー": "curry", "カレーライス": "curry and rice",
-      "ハンバーグ": "hamburger steak", "ハンバーガー": "hamburgers",
-      "オムライス": "omelet rice", "ピザ": "pizza"
+    const COM_ANSWERS = [
+      { 
+        upHour: 6, upMin: "00",
+        brkFoodJa: "あまい ハチミツ", brkFoodEn: "sweet honey", brkHour: 7, brkMin: "00",
+        morActJa: "森を おさんぽします", morActEn: "take a walk in the forest", morHour: 9, morMin: "30",
+        lunFoodJa: "大きな シャケ", lunFoodEn: "a big salmon", lunHour: 12, lunMin: "00"
+      },
+      { 
+        upHour: 7, upMin: "30",
+        brkFoodJa: "新鮮な フルーツ", brkFoodEn: "fresh fruits", brkHour: 8, brkMin: "00",
+        morActJa: "木登りを します", morActEn: "climb a tree", morHour: 10, morMin: "00",
+        lunFoodJa: "特大の リンゴ", lunFoodEn: "giant apples", lunHour: 1, lunMin: "00" 
+      },
+      { 
+        upHour: 5, upMin: "00",
+        brkFoodJa: "ほかほかの パン", brkFoodEn: "warm bread", brkHour: 6, brkMin: "00",
+        morActJa: "川で およぎます", morActEn: "swim in the river", morHour: 9, morMin: "00",
+        lunFoodJa: "ピザを 10まい", lunFoodEn: "ten pizzas", lunHour: 12, lunMin: "30"
+      }
+    ];
+
+    const DISHES = [
+      "タケノコとサツマイモの ホクホクおみそしる",
+      "サツマイモの タケノコあんかけ",
+      "秋の あまから きんぴら",
+      "タケノコと サツマイモの 炊き込みごはん",
+      "もっちり サツマイモと タケノコの 天ぷら",
+      "タケノコ入り サツマイモ コロッケ",
+      "サツマイモと タケノコの チーズ焼き",
+      "タケノコと サツマイモの カレー",
+      "サツマイモと タケノコの バターしょうゆ炒め",
+      "魔法の ぜっぴん スイートポテト・タケノコぞえ"
+    ];
+
+    const HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    const MINS = ["00", "15", "30", "45"];
+    
+    const NUMBERS = {
+      1: "one", 2: "two", 3: "three", 4: "four", 5: "five",
+      6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten",
+      11: "eleven", 12: "twelve", 
+      15: "fifteen", 20: "twenty", 25: "twenty-five", 30: "thirty", 
+      35: "thirty-five", 40: "forty", 45: "forty-five", 50: "fifty", 55: "fifty-five",
+      0: "zero"
     };
 
-    // よくある「したいこと」の簡易辞書
-    const ACTIVITY_DICTIONARY = {
-      "ゲームをする": "play video games", "ゲーム": "play video games",
-      "テレビをみる": "watch TV", "テレビを見る": "watch TV",
-      "ほんをよむ": "read books", "本を読む": "read books", "読書する": "read books",
-      "おえかきをする": "draw pictures", "絵を描く": "draw pictures",
-      "さんぽする": "take a walk", "散歩する": "take a walk", "さんぽ": "take a walk",
-      "こうえんにいく": "go to the park", "公園に行く": "go to the park",
-      "ともだちとあそぶ": "play with my friends", "友達と遊ぶ": "play with my friends",
-      "スポーツをする": "play sports", "サッカーをする": "play soccer", "やきゅうをする": "play baseball",
-      "べんきょうをする": "study", "勉強する": "study",
-      "しゅくだいをする": "do my homework", "宿題をする": "do my homework",
-      "かいものにいく": "go shopping", "買い物に行く": "go shopping",
-      "そうじをする": "clean my room", "掃除をする": "clean my room",
-      "寝る": "sleep", "ねる": "sleep", "おひるねをする": "take a nap"
-    };
+    const getDisplayTime = (h, m) => `${h.toString().padStart(2, '0')}:${m}`;
+    const getSpeakTime = (h, m) => m === "00" ? `${h}` : `${h} ${m}`;
 
-    // --- アプリケーション本体 ---
+    // --- ミニゲームコンポーネント ---
+    function MiniGame({ monsters, onFinish }) {
+      const [timeLeft, setTimeLeft] = useState(10);
+      const [coins, setCoins] = useState(0);
+      
+      const initialPositions = useMemo(() => {
+        return monsters.map((m) => ({
+          id: m.id,
+          emoji: m.emoji,
+          x: 50 + (Math.random() * 40 - 20),
+          y: 50 + (Math.random() * 40 - 20)
+        }));
+      }, [monsters]);
+
+      const [playerPositions, setPlayerPositions] = useState(initialPositions);
+      const [coinPos, setCoinPos] = useState({x: Math.random() * 80 + 10, y: Math.random() * 80 + 10});
+      
+      const playersRef = useRef(initialPositions);
+      const coinRef = useRef({x: coinPos.x, y: coinPos.y});
+      const keysRef = useRef({ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false});
+      const requestRef = useRef();
+      const isFinished = useRef(false);
+
+      useEffect(() => {
+        const timer = setInterval(() => {
+          setTimeLeft(prev => {
+            if (prev <= 1) {
+              clearInterval(timer);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        return () => clearInterval(timer);
+      }, []);
+
+      useEffect(() => {
+        if (timeLeft === 0 && !isFinished.current) {
+          isFinished.current = true;
+          cancelAnimationFrame(requestRef.current);
+          onFinish(coins);
+        }
+      }, [timeLeft, coins, onFinish]);
+
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (keysRef.current.hasOwnProperty(e.key)) {
+            keysRef.current[e.key] = true;
+            e.preventDefault();
+          }
+        };
+        const handleKeyUp = (e) => {
+          if (keysRef.current.hasOwnProperty(e.key)) {
+            keysRef.current[e.key] = false;
+            e.preventDefault();
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown, {passive: false});
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+          window.removeEventListener('keydown', handleKeyDown);
+          window.removeEventListener('keyup', handleKeyUp);
+        };
+      }, []);
+
+      useEffect(() => {
+        const updateGame = () => {
+          if (timeLeft <= 0) return;
+
+          const speed = 1.5;
+          let dx = 0;
+          let dy = 0;
+
+          if (keysRef.current.ArrowUp) dy -= speed;
+          if (keysRef.current.ArrowDown) dy += speed;
+          if (keysRef.current.ArrowLeft) dx -= speed;
+          if (keysRef.current.ArrowRight) dx += speed;
+
+          const newPositions = playersRef.current.map(p => {
+            let px = p.x + dx;
+            let py = p.y + dy;
+            px = Math.max(5, Math.min(95, px));
+            py = Math.max(5, Math.min(95, py));
+            return { ...p, x: px, y: py };
+          });
+
+          playersRef.current = newPositions;
+          setPlayerPositions(newPositions);
+
+          const cx = coinRef.current.x;
+          const cy = coinRef.current.y;
+          const hit = newPositions.some(p => Math.hypot(p.x - cx, p.y - cy) < 12);
+          
+          if (hit) { 
+            setCoins(c => c + 1);
+            coinRef.current = {
+              x: Math.random() * 80 + 10,
+              y: Math.random() * 80 + 10
+            };
+            setCoinPos({...coinRef.current});
+          }
+
+          requestRef.current = requestAnimationFrame(updateGame);
+        };
+        requestRef.current = requestAnimationFrame(updateGame);
+        return () => cancelAnimationFrame(requestRef.current);
+      }, [timeLeft]);
+
+      const handlePointer = (dir, isDown) => {
+        keysRef.current[dir] = isDown;
+      };
+
+      return (
+        <div className="min-h-screen bg-green-50 p-4 md:p-8 flex flex-col items-center justify-center">
+          <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-4 md:p-8 border-4 border-green-200">
+            <h2 className="text-2xl font-bold text-center text-green-700 mb-4">コインをあつめよう！</h2>
+            <div className="flex justify-between items-center mb-4 px-2">
+              <div className="text-2xl font-bold text-gray-700">⏳ {timeLeft}びょう</div>
+              <div className="text-2xl font-bold text-yellow-500">🪙 {coins} コイン</div>
+            </div>
+            
+            <div className="relative w-full h-80 bg-green-100 rounded-xl overflow-hidden border-2 border-green-300">
+              {playerPositions.map((p, index) => (
+                <div 
+                  key={p.id + '-' + index}
+                  className="absolute text-5xl transform -translate-x-1/2 -translate-y-1/2 drop-shadow-md z-10"
+                  style={{ left: `${p.x}%`, top: `${p.y}%` }}
+                >
+                  {p.emoji}
+                </div>
+              ))}
+              <div 
+                className="absolute text-4xl transform -translate-x-1/2 -translate-y-1/2 drop-shadow-md animate-bounce"
+                style={{ left: `${coinPos.x}%`, top: `${coinPos.y}%` }}
+              >
+                🪙
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 w-48 mx-auto mt-6 touch-none">
+              <div />
+              <button 
+                className="bg-gray-200 active:bg-gray-400 p-4 rounded-xl text-2xl shadow select-none flex items-center justify-center"
+                onPointerDown={() => handlePointer('ArrowUp', true)}
+                onPointerUp={() => handlePointer('ArrowUp', false)}
+                onPointerLeave={() => handlePointer('ArrowUp', false)}
+              >⬆️</button>
+              <div />
+              <button 
+                className="bg-gray-200 active:bg-gray-400 p-4 rounded-xl text-2xl shadow select-none flex items-center justify-center"
+                onPointerDown={() => handlePointer('ArrowLeft', true)}
+                onPointerUp={() => handlePointer('ArrowLeft', false)}
+                onPointerLeave={() => handlePointer('ArrowLeft', false)}
+              >⬅️</button>
+              <button 
+                className="bg-gray-200 active:bg-gray-400 p-4 rounded-xl text-2xl shadow select-none flex items-center justify-center"
+                onPointerDown={() => handlePointer('ArrowDown', true)}
+                onPointerUp={() => handlePointer('ArrowDown', false)}
+                onPointerLeave={() => handlePointer('ArrowDown', false)}
+              >⬇️</button>
+              <button 
+                className="bg-gray-200 active:bg-gray-400 p-4 rounded-xl text-2xl shadow select-none flex items-center justify-center"
+                onPointerDown={() => handlePointer('ArrowRight', true)}
+                onPointerUp={() => handlePointer('ArrowRight', false)}
+                onPointerLeave={() => handlePointer('ArrowRight', false)}
+              >➡️</button>
+            </div>
+            
+            <p className="text-center text-gray-500 mt-4 text-sm font-bold">じゅうじキーでも うごかせるよ</p>
+          </div>
+        </div>
+      );
+    }
+
+    // --- メインアプリ ---
     function App() {
       const [step, setStep] = useState('HOME'); 
       const [playCount, setPlayCount] = useState(0);
       const [collections, setCollections] = useState([]);
+      const [totalCoins, setTotalCoins] = useState(0);
+      const [items, setItems] = useState({ takenoko: 0, satsumaimo: 0 });
+      const [cookedDishes, setCookedDishes] = useState([]);
       
-      // -- 入力用ステート (理想の日曜日) --
-      const [wakeHour, setWakeHour] = useState(7);
-      const [wakeMinute, setWakeMinute] = useState(0);
+      const [comData, setComData] = useState(COM_ANSWERS[0]);
+
+      // 入力データ
+      const [upHour, setUpHour] = useState(7);
+      const [upMin, setUpMin] = useState("00");
+
+      const [brkFoodJa, setBrkFoodJa] = useState("");
+      const [brkFoodEn, setBrkFoodEn] = useState("");
+      const [brkHour, setBrkHour] = useState(8);
+      const [brkMin, setBrkMin] = useState("00");
+
+      const [morActJa, setMorActJa] = useState("");
+      const [morActEn, setMorActEn] = useState("");
+      const [morHour, setMorHour] = useState(10);
+      const [morMin, setMorMin] = useState("00");
+
+      const [lunFoodJa, setLunFoodJa] = useState("");
+      const [lunFoodEn, setLunFoodEn] = useState("");
+      const [lunHour, setLunHour] = useState(12);
+      const [lunMin, setLunMin] = useState("00");
       
-      const [breakfastHour, setBreakfastHour] = useState(7);
-      const [breakfastMinute, setBreakfastMinute] = useState(30);
-      const [jaBreakfast, setJaBreakfast] = useState("");
-      const [engBreakfast, setEngBreakfast] = useState("");
+      const [worksheetData, setWorksheetData] = useState(null);
+      const [showWorksheet, setShowWorksheet] = useState(false);
 
-      const [activityHour, setActivityHour] = useState(10);
-      const [activityMinute, setActivityMinute] = useState(0);
-      const [jaActivity, setJaActivity] = useState("");
-      const [engActivity, setEngActivity] = useState("");
-
-      const [lunchHour, setLunchHour] = useState(12);
-      const [lunchMinute, setLunchMinute] = useState(0);
-      const [jaLunch, setJaLunch] = useState("");
-      const [engLunch, setEngLunch] = useState("");
-
-      const [activeMic, setActiveMic] = useState(null); // 'breakfast' | 'activity' | 'lunch'
+      const [quizQuestions, setQuizQuestions] = useState([]);
+      const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
       
-      const [isTranslating, setIsTranslating] = useState(false);
       const [failCount, setFailCount] = useState(0);
       const [isListening, setIsListening] = useState(false);
-      const [recognitionText, setRecognitionText] = useState("");
+      const [isListeningJa, setIsListeningJa] = useState(false);
       const [feedbackMsg, setFeedbackMsg] = useState("");
       
       const [currentGachaMonster, setCurrentGachaMonster] = useState(null);
       const [isRolling, setIsRolling] = useState(false);
       const [rollEmoji, setRollEmoji] = useState("🎁");
+      const [lastEarnedCoins, setLastEarnedCoins] = useState(0);
+
+      const [purchaseEffect, setPurchaseEffect] = useState(null);
+      const [cookEffect, setCookEffect] = useState(null);
 
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const synth = window.speechSynthesis;
 
-      // 初期化：ローカルストレージからデータ読み込み
       useEffect(() => {
-        const savedCount = localStorage.getItem('englishAppPlayCount_v3');
+        const savedCount = localStorage.getItem('englishAppSundayPlayCount');
         if (savedCount) setPlayCount(parseInt(savedCount, 10));
-
-        const savedCollections = localStorage.getItem('englishAppCollections_v3');
+        const savedCollections = localStorage.getItem('englishAppSundayCollections');
         if (savedCollections) setCollections(JSON.parse(savedCollections));
+        const savedCoins = localStorage.getItem('englishAppSundayCoins');
+        if (savedCoins) setTotalCoins(parseInt(savedCoins, 10));
+        const savedItems = localStorage.getItem('englishAppSundayItems');
+        if (savedItems) setItems(JSON.parse(savedItems));
+        const savedDishes = localStorage.getItem('englishAppSundayDishes');
+        if (savedDishes) setCookedDishes(JSON.parse(savedDishes));
+        const savedWorksheet = localStorage.getItem('englishAppSundayWorksheet');
+        if (savedWorksheet) setWorksheetData(JSON.parse(savedWorksheet));
       }, []);
 
-      // データ保存
-      const saveData = (newCount, newCollections) => {
-        localStorage.setItem('englishAppPlayCount_v3', newCount.toString());
-        localStorage.setItem('englishAppCollections_v3', JSON.stringify(newCollections));
+      const saveData = (newCount, newCollections, newCoins, newItems, newDishes) => {
+        localStorage.setItem('englishAppSundayPlayCount', newCount.toString());
+        localStorage.setItem('englishAppSundayCollections', JSON.stringify(newCollections));
+        localStorage.setItem('englishAppSundayCoins', newCoins.toString());
+        if(newItems) localStorage.setItem('englishAppSundayItems', JSON.stringify(newItems));
+        if(newDishes) localStorage.setItem('englishAppSundayDishes', JSON.stringify(newDishes));
+        
         setPlayCount(newCount);
         setCollections(newCollections);
+        setTotalCoins(newCoins);
+        if(newItems) setItems(newItems);
+        if(newDishes) setCookedDishes(newDishes);
       };
 
-      // --- 音声合成 (TTS) ---
-      const speak = useCallback((text, rate = 0.9) => {
-        if (synth.speaking) {
-          synth.cancel();
+      const saveWorksheet = () => {
+        const data = {
+          upEn: `I get up at ${getDisplayTime(upHour, upMin)}.`,
+          upJa: `（${upHour}時${upMin}分に 起きる）`,
+          brkEn: `I eat ${brkFoodEn} for breakfast at ${getDisplayTime(brkHour, brkMin)}.`,
+          brkJa: `（${brkFoodJa}）`,
+          morEn: `I ${morActEn} at ${getDisplayTime(morHour, morMin)}.`,
+          morJa: `（${morHour}時${morMin}分に ${morActJa}）`,
+          lunEn: `I eat ${lunFoodEn} for lunch at ${getDisplayTime(lunHour, lunMin)}.`,
+          lunJa: `（${lunFoodJa}）`
+        };
+        localStorage.setItem('englishAppSundayWorksheet', JSON.stringify(data));
+        setWorksheetData(data);
+      };
+
+      const startApp = () => {
+        const randomComData = COM_ANSWERS[Math.floor(Math.random() * COM_ANSWERS.length)];
+        setComData(randomComData);
+        setFailCount(0);
+        
+        setUpHour(7); setUpMin("00");
+        setBrkFoodJa(""); setBrkFoodEn("");
+        setBrkHour(8); setBrkMin("00");
+        setMorActJa(""); setMorActEn("");
+        setMorHour(10); setMorMin("00");
+        setLunFoodJa(""); setLunFoodEn("");
+        setLunHour(12); setLunMin("00");
+        
+        setStep('COM_ASK');
+      };
+
+      const buyItem = (itemType, cost) => {
+        if (totalCoins >= cost) {
+          const newCoins = totalCoins - cost;
+          const newItems = { ...items, [itemType]: items[itemType] + 1 };
+          saveData(playCount, collections, newCoins, newItems, cookedDishes);
+          
+          setPurchaseEffect(itemType);
+          setTimeout(() => setPurchaseEffect(null), 1500);
+        } else {
+          alert("コインがたりないよ！ミニゲームであつめてね。");
         }
+      };
+
+      const cookDish = () => {
+        if (items.takenoko >= 1 && items.satsumaimo >= 1) {
+          const newItems = { takenoko: items.takenoko - 1, satsumaimo: items.satsumaimo - 1 };
+          setItems(newItems);
+          saveData(playCount, collections, totalCoins, newItems, cookedDishes);
+
+          setCookEffect('cooking');
+          setTimeout(() => {
+            const unownedDishes = DISHES.filter(d => !cookedDishes.includes(d));
+            const newDish = unownedDishes.length > 0 ? unownedDishes[Math.floor(Math.random() * unownedDishes.length)] : DISHES[Math.floor(Math.random() * DISHES.length)];
+            
+            setCookEffect(newDish);
+            
+            if (!cookedDishes.includes(newDish)) {
+              const newDishes = [...cookedDishes, newDish];
+              setCookedDishes(newDishes);
+              saveData(playCount, collections, totalCoins, newItems, newDishes);
+            }
+          }, 2000);
+        }
+      };
+
+      const handleBack = () => {
+        setFailCount(0);
+        setFeedbackMsg("");
+        setIsListening(false);
+        setIsListeningJa(false);
+        
+        switch(step) {
+          case 'COM_ASK': setStep('HOME'); break;
+          case 'MY_INPUT_WAKEUP': setStep('COM_ASK'); break;
+          case 'MY_SPEAK_WAKEUP': setStep('MY_INPUT_WAKEUP'); break;
+          case 'WORKSHEET_1': setStep('MY_SPEAK_WAKEUP'); break;
+          case 'MY_INPUT_BREAKFAST': setStep('WORKSHEET_1'); break;
+          case 'MY_SPEAK_BREAKFAST': setStep('MY_INPUT_BREAKFAST'); break;
+          case 'WORKSHEET_2': setStep('MY_SPEAK_BREAKFAST'); break;
+          case 'MY_INPUT_MORNING': setStep('WORKSHEET_2'); break;
+          case 'MY_SPEAK_MORNING': setStep('MY_INPUT_MORNING'); break;
+          case 'WORKSHEET_3': setStep('MY_SPEAK_MORNING'); break;
+          case 'MY_INPUT_LUNCH': setStep('WORKSHEET_3'); break;
+          case 'MY_SPEAK_LUNCH': setStep('MY_INPUT_LUNCH'); break;
+          case 'WORKSHEET_4': setStep('MY_SPEAK_LUNCH'); break;
+          case 'ASK_COM_INTRO': setStep('WORKSHEET_4'); break;
+          case 'ASK_COM_SPEAK': setStep('ASK_COM_INTRO'); break;
+          case 'COM_ANSWER': setStep('ASK_COM_SPEAK'); break;
+          case 'WORKSHEET_CHECK': setStep('COM_ANSWER'); break;
+          case 'WORKSHEET_STAMP': setStep('WORKSHEET_CHECK'); break;
+          case 'QUIZ_INTRO': setStep('WORKSHEET_CHECK'); break;
+          default: break;
+        }
+      };
+
+      const BackButton = () => (
+        <button onClick={handleBack} className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-gray-700 font-bold py-2 px-4 rounded-full shadow-md hover:bg-gray-100 flex items-center z-20 border-2 border-gray-200">
+          <span className="mr-1">◀</span> もどる
+        </button>
+      );
+
+      const speak = useCallback((text, rate = 0.9) => {
+        if (synth.speaking) synth.cancel();
         const utterThis = new SpeechSynthesisUtterance(text);
         utterThis.lang = 'en-US';
         utterThis.rate = rate; 
-        
         const voices = synth.getVoices();
-        const englishVoice = voices.find(voice => voice.lang.includes('en-US') && voice.name.includes('Female')) || voices.find(voice => voice.lang.includes('en-US'));
-        if (englishVoice) {
-          utterThis.voice = englishVoice;
-        }
-        
+        const englishVoice = voices.find(v => v.lang.includes('en-US') && v.name.includes('Female')) || voices.find(v => v.lang.includes('en-US'));
+        if (englishVoice) utterThis.voice = englishVoice;
         synth.speak(utterThis);
       }, [synth]);
 
-      // コンピューターの回答時の自動音声再生
       useEffect(() => {
-        if (step === 'COM_ANSWER') {
-          const timer = setTimeout(() => {
-            speak("I get up at 8 o'clock. I eat pancakes for breakfast at 9 o'clock. I read books at 10 30. I eat pasta for lunch at 12 30.");
-          }, 800);
-          return () => clearTimeout(timer);
+        if (step === 'COM_ASK') {
+          setTimeout(() => speak("Please tell me your perfect Sunday."), 500);
+        } else if (step === 'COM_ANSWER') {
+          const t = `My perfect Sunday is... I get up at ${getSpeakTime(comData.upHour, comData.upMin)}. I eat ${comData.brkFoodEn} for breakfast at ${getSpeakTime(comData.brkHour, comData.brkMin)}. I ${comData.morActEn} at ${getSpeakTime(comData.morHour, comData.morMin)}. I eat ${comData.lunFoodEn} for lunch at ${getSpeakTime(comData.lunHour, comData.lunMin)}.`;
+          setTimeout(() => speak(t, 0.85), 500);
         }
-      }, [step, speak]);
+      }, [step, speak, comData]);
 
-      // --- 翻訳処理 (辞書 + MyMemory API) ---
-      const translateText = async (text, type) => {
-        const t = text.trim();
-        if (!t) return type === 'food' ? "something" : "do something";
+      const ACT_DICT = {
+        "ゲーム": "play video games", "ゲームをする": "play video games", "ゲームをします": "play video games", "ゲームする": "play video games",
+        "テレビを見る": "watch TV", "テレビをみる": "watch TV", "テレビみる": "watch TV",
+        "本を読む": "read a book", "本をよむ": "read a book", "本よむ": "read a book",
+        "お風呂に入る": "take a bath", "おふろにはいる": "take a bath",
+        "公園で遊ぶ": "play in the park", "公園であそぶ": "play in the park",
+        "買い物に行く": "go shopping", "お買い物に行く": "go shopping", "お買いものにいく": "go shopping", "買い物にいく": "go shopping",
+        "友達と遊ぶ": "play with my friends", "友だちと遊ぶ": "play with my friends",
+        "宿題をする": "do my homework"
+      };
 
-        if (type === 'food' && FOOD_DICTIONARY[t]) return FOOD_DICTIONARY[t];
-        if (type === 'activity' && ACTIVITY_DICTIONARY[t]) return ACTIVITY_DICTIONARY[t];
+      const FOOD_DICT = {
+        "お米": "rice", "おこめ": "rice", "米": "rice", "ご飯": "rice", "ごはん": "rice",
+        "シリアル": "cereal", "パン": "bread", "食パン": "bread", "トースト": "toast",
+        "目玉焼き": "fried egg", "おにぎり": "rice ball", "ラーメン": "ramen",
+        "オムライス": "omelet rice", "おべんとう": "bento", "お弁当": "bento",
+        "カレーライス": "curry and rice", "カレー": "curry", "おすし": "sushi", "寿司": "sushi",
+        "ハンバーグ": "hamburger steak"
+      };
 
-        try {
-          const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(t)}&langpair=ja|en`;
-          const response = await fetch(url);
-          if (response.ok) {
-            const data = await response.json();
-            let translated = data.responseData.translatedText.toLowerCase();
-            translated = translated.replace(/[.!?。、\n]/g, "").trim();
-            if (type === 'food') {
-              translated = translated.replace(/^(a|an|the|some)\s+/i, "");
-            } else if (type === 'activity') {
-              translated = translated.replace(/^i\s+/i, ""); // "i play" -> "play"
-            }
-            return translated;
+      // 翻訳API呼び出し (行動用)
+      const handleTranslateAction = async (jaText, setEnText, nextStep) => {
+        let text = jaText.trim();
+        if(!text) {
+            setEnText("do something");
+            setStep(nextStep);
+            return;
+        }
+
+        for (const [key, value] of Object.entries(ACT_DICT)) {
+          if (text === key || text === `${key}。` || text === `${key}します` || text === `${key}する`) {
+            setEnText(value);
+            setStep(nextStep);
+            return;
           }
-        } catch (e) {
-          console.error("Translation error:", e);
         }
-        return type === 'food' ? "something" : "play around";
+
+        if (text.includes("枚方モール") || text.includes("ひらかたモール")) {
+            setEnText("go to the Hirakata mall");
+            setStep(nextStep);
+            return;
+        }
+
+        if (text.includes("花火")) {
+            setEnText("play with fireworks");
+            setStep(nextStep);
+            return;
+        }
+
+        setStep('TRANSLATING');
+        let translated = "do something";
+        try {
+            const query = `私は${text}。`;
+            const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(query)}&langpair=ja|en`);
+            const data = await res.json();
+            if (data && data.responseData && data.responseData.translatedText) {
+                let t = data.responseData.translatedText;
+                
+                t = t.replace(/^(i\s+am|i'm|i\s+will|i)\s+/i, '');
+                
+                if (t.toLowerCase().startsWith('going to ')) {
+                  t = t.replace(/^going\s+to\s+/i, 'go to ');
+                } else if (t.toLowerCase().startsWith('going ')) {
+                  t = t.replace(/^going\s+/i, 'go ');
+                }
+                
+                t = t.replace(/\.$/, '').trim();
+                
+                if (t.includes('/(') || t.includes('[')) {
+                  t = t.split('/')[0].replace(/\[.*?\]/g, '').trim();
+                }
+
+                if (t) translated = t;
+            }
+        } catch(e) { console.error(e); }
+        setEnText(translated.toLowerCase());
+        setStep(nextStep);
       };
 
-      const handleTranslate = async (field) => {
-        setIsTranslating(true);
-        if (field === 'breakfast') {
-          const res = await translateText(jaBreakfast, 'food');
-          setEngBreakfast(res);
-          setIsTranslating(false);
-          setFailCount(0);
-          setStep('SPEAK_BREAKFAST');
-        } else if (field === 'activity') {
-          const res = await translateText(jaActivity, 'activity');
-          setEngActivity(res);
-          setIsTranslating(false);
-          setFailCount(0);
-          setStep('SPEAK_ACTIVITY');
-        } else if (field === 'lunch') {
-          const res = await translateText(jaLunch, 'food');
-          setEngLunch(res);
-          setIsTranslating(false);
-          setFailCount(0);
-          setStep('SPEAK_LUNCH');
+      // 翻訳API呼び出し (食べ物用)
+      const handleTranslateFood = async (jaText, setEnText, nextStep) => {
+        let text = jaText.trim();
+        if(!text) {
+            setEnText("something");
+            setStep(nextStep);
+            return;
         }
+
+        for (const [key, value] of Object.entries(FOOD_DICT)) {
+          if (text === key || text === `${key}。`) {
+            setEnText(value);
+            setStep(nextStep);
+            return;
+          }
+        }
+
+        if (text.includes("たけのこ") && (text.includes("ご飯") || text.includes("ごはん"))) {
+            setEnText("bamboo shoot rice");
+            setStep(nextStep);
+            return;
+        }
+
+        setStep('TRANSLATING');
+        let translated = "something";
+        try {
+            const query = `私は${text}を食べます。`;
+            const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(query)}&langpair=ja|en`);
+            const data = await res.json();
+            if (data && data.responseData && data.responseData.translatedText) {
+                let t = data.responseData.translatedText;
+                
+                t = t.replace(/^(i\s+eat|i'm\s+eating|i\s+will\s+eat)\s+/i, '');
+                t = t.replace(/\.$/, '').trim();
+                
+                if (t.includes('/(') || t.includes('[')) {
+                  t = t.split('/')[0].replace(/\[.*?\]/g, '').trim();
+                }
+
+                if (t) translated = t;
+            }
+        } catch(e) { console.error(e); }
+        setEnText(translated.toLowerCase());
+        setStep(nextStep);
       };
 
-      // --- 音声認識 (STT) 入力用 (日本語) ---
-      const startJaListening = (field) => {
+      const prepareQuiz = () => {
+        const targets = [15, 20, 25, 30, 35, 40, 45, 50, 55];
+        const q = [];
+        while(q.length < 4) {
+          const r = targets[Math.floor(Math.random() * targets.length)];
+          if(!q.includes(r)) q.push(r);
+        }
+        setQuizQuestions(q);
+        setCurrentQuizIndex(0);
+        setStep('QUIZ_INTRO');
+      };
+
+      const startListeningJa = (setStateFunc) => {
         if (!SpeechRecognition) {
           alert("お使いのブラウザは音声入力に対応していません。キーボードで入力してください。");
           return;
         }
-
         const recognition = new SpeechRecognition();
         recognition.lang = 'ja-JP';
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
 
-        setActiveMic(field);
-        const listeningText = "きいています...";
-        if (field === 'breakfast') setJaBreakfast(listeningText);
-        if (field === 'activity') setJaActivity(listeningText);
-        if (field === 'lunch') setJaLunch(listeningText);
-
+        setIsListeningJa(true);
         recognition.onresult = (event) => {
-          let transcript = event.results[0][0].transcript;
-          transcript = transcript.replace(/[.,。、]/g, "").trim();
-          
-          if (field === 'breakfast') setJaBreakfast(transcript);
-          if (field === 'activity') setJaActivity(transcript);
-          if (field === 'lunch') setJaLunch(transcript);
+          const transcript = event.results[0][0].transcript;
+          setStateFunc(prev => prev + transcript);
         };
-
-        recognition.onerror = (event) => {
-          console.error("Speech recognition error", event.error);
-          if (field === 'breakfast') setJaBreakfast("");
-          if (field === 'activity') setJaActivity("");
-          if (field === 'lunch') setJaLunch("");
-          alert("うまくききとれませんでした。キーボードでいれてね。");
+        recognition.onerror = () => {
+          setIsListeningJa(false);
+          alert("うまくききとれませんでした。もういちどおしてね。");
         };
-
-        recognition.onend = () => {
-          setActiveMic(null);
-        };
-
+        recognition.onend = () => setIsListeningJa(false);
         recognition.start();
       };
 
-      // --- 音声認識 (STT) 発音練習用 (英語) ---
-      const startEnListening = (targetType) => {
+      const startListening = (targetType) => {
         if (!SpeechRecognition) {
-          alert("お使いのブラウザは音声入力に対応していません。スキップボタンで進んでください。");
-          setFailCount(3); 
+          alert("お使いのブラウザは音声入力に対応していません。スキップして進んでください。");
+          setFailCount(2); 
           return;
         }
-
         const recognition = new SpeechRecognition();
         recognition.lang = 'en-US';
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
 
         setIsListening(true);
-        setRecognitionText("きいています...");
         setFeedbackMsg("");
 
         recognition.onresult = (event) => {
           const transcript = event.results[0][0].transcript.toLowerCase();
-          setRecognitionText(transcript);
-          if (targetType === 'ASK_COM_TIME') {
-            checkAskPronunciation(transcript);
-          } else {
-            checkSpecificPronunciation(transcript, targetType);
-          }
+          checkPronunciation(transcript, targetType);
         };
-
-        recognition.onerror = (event) => {
-          console.error("Speech recognition error", event.error);
+        recognition.onerror = () => {
           setIsListening(false);
-          setRecognitionText("うまくききとれませんでした。もういちどボタンをおしてね。");
-          setFailCount(prev => prev + 1);
+          handleFail();
         };
-
-        recognition.onend = () => {
-          setIsListening(false);
-        };
-
+        recognition.onend = () => setIsListening(false);
         recognition.start();
       };
 
-      const checkSpecificPronunciation = (transcript, targetType) => {
-        const lower = transcript.toLowerCase();
+      const handleFail = () => {
+        setFailCount(prev => prev + 1);
+        setFeedbackMsg("おしい！もういちどチャレンジ！\nマイクの場所はどこか確認をしよう。\n分からない人は先生を呼ぼう。\n自分の声がうまく入らない場合はイヤホンをとってやってみよう。");
+      };
+
+      const checkPronunciation = (transcript, targetType) => {
         let isCorrect = false;
+        const t = transcript;
         
-        // 厳密にやると難しいので甘めに判定
-        if (targetType === 'WAKE') {
-          isCorrect = lower.includes("get up") || lower.length > 10;
-        } else if (targetType === 'BREAKFAST') {
-          isCorrect = lower.includes("breakfast") || lower.includes("eat") || lower.length > 10;
-        } else if (targetType === 'ACTIVITY') {
-          isCorrect = lower.length > 5;
-        } else if (targetType === 'LUNCH') {
-          isCorrect = lower.includes("lunch") || lower.includes("eat") || lower.length > 10;
+        if (targetType === 'MY_WAKEUP') {
+          isCorrect = t.includes("get") || t.includes("up") || t.includes(upHour.toString()) || t.includes(NUMBERS[upHour]);
+        } else if (targetType === 'MY_BREAKFAST') {
+          isCorrect = t.includes("eat") || t.includes("breakfast") || t.includes(brkHour.toString()) || t.includes(NUMBERS[brkHour]);
+        } else if (targetType === 'MY_MORNING') {
+          const firstWord = morActEn.split(' ')[0];
+          isCorrect = t.includes(firstWord) || t.includes("i") || t.includes(morHour.toString()) || t.includes(NUMBERS[morHour]);
+        } else if (targetType === 'MY_LUNCH') {
+          isCorrect = t.includes("eat") || t.includes("lunch") || t.includes(lunHour.toString()) || t.includes(NUMBERS[lunHour]);
+        } else if (targetType === 'ASK_COM') {
+          isCorrect = t.includes("perfect") || t.includes("sunday") || t.includes("tell");
+        } else if (targetType === 'QUIZ') {
+          if (quizQuestions.length > 0 && currentQuizIndex < quizQuestions.length) {
+            const ans = quizQuestions[currentQuizIndex];
+            const ansWord = NUMBERS[ans].replace('-', ' ');
+            isCorrect = t.includes(ans.toString()) || t.includes(NUMBERS[ans]) || t.includes(ansWord);
+          }
         }
-        
+
         if (isCorrect) {
           setFeedbackMsg("Excellent! 👏");
           setTimeout(() => speak("Excellent!"), 500);
-          setTimeout(() => {
-            if (targetType === 'WAKE') proceedToNext('INPUT_BREAKFAST');
-            if (targetType === 'BREAKFAST') proceedToNext('INPUT_ACTIVITY');
-            if (targetType === 'ACTIVITY') proceedToNext('INPUT_LUNCH');
-            if (targetType === 'LUNCH') proceedToNext('ASK_COM_TIME');
-          }, 2000);
+          setTimeout(() => proceedToNext(targetType), 2000);
         } else {
-          setFeedbackMsg("おしい！もういちどチャレンジ！");
-          setFailCount(prev => prev + 1);
+          handleFail();
         }
       };
 
-      const checkAskPronunciation = (transcript) => {
-        const lower = transcript.toLowerCase();
-        const hasKeyword = lower.includes("perfect") && lower.includes("sunday");
-        
-        if (hasKeyword || lower.length > 15) { 
-          setFeedbackMsg("Excellent! 👏");
-          setTimeout(() => speak("Excellent!"), 500);
-          setTimeout(() => proceedToNext('COM_ANSWER'), 2000);
-        } else {
-          setFeedbackMsg("おしい！もういちどチャレンジ！");
-          setFailCount(prev => prev + 1);
-        }
-      };
-
-      const proceedToNext = (nextStep) => {
+      const proceedToNext = (fromType) => {
         setFailCount(0);
-        setRecognitionText("");
         setFeedbackMsg("");
-        setStep(nextStep);
+        
+        if (fromType === 'MY_WAKEUP') setStep('WORKSHEET_1');
+        if (fromType === 'MY_BREAKFAST') setStep('WORKSHEET_2');
+        if (fromType === 'MY_MORNING') setStep('WORKSHEET_3');
+        if (fromType === 'MY_LUNCH') setStep('WORKSHEET_4');
+        if (fromType === 'ASK_COM') setStep('COM_ANSWER');
+        if (fromType === 'QUIZ') {
+          if (currentQuizIndex + 1 < 4) {
+            setCurrentQuizIndex(prev => prev + 1);
+          } else {
+            setStep('GACHA');
+          }
+        }
       };
 
-      // --- ガチャロジック ---
       const rollGacha = () => {
         setIsRolling(true);
-        
         const intervalId = setInterval(() => {
-          const randomMonster = MONSTERS[Math.floor(Math.random() * MONSTERS.length)];
-          setRollEmoji(randomMonster.emoji);
+          setRollEmoji(MONSTERS[Math.floor(Math.random() * MONSTERS.length)].emoji);
         }, 100);
 
         const ownedIds = collections.map(c => c.id);
-        const unownedMonsters = MONSTERS.filter(m => !ownedIds.includes(m.id));
-
-        let newMonster;
-        if (unownedMonsters.length > 0) {
-          const randomIndex = Math.floor(Math.random() * unownedMonsters.length);
-          newMonster = unownedMonsters[randomIndex];
-        } else {
-          const randomIndex = Math.floor(Math.random() * MONSTERS.length);
-          newMonster = MONSTERS[randomIndex];
-        }
+        const unowned = MONSTERS.filter(m => !ownedIds.includes(m.id));
+        const newMonster = unowned.length > 0 ? unowned[Math.floor(Math.random() * unowned.length)] : MONSTERS[Math.floor(Math.random() * MONSTERS.length)];
 
         setTimeout(() => {
           clearInterval(intervalId);
           setIsRolling(false);
           setCurrentGachaMonster(newMonster);
-          
           if (!ownedIds.includes(newMonster.id)) {
-            saveData(playCount + 1, [...collections, newMonster]);
+            saveData(playCount + 1, [...collections, newMonster], totalCoins, items, cookedDishes);
           } else {
-            saveData(playCount + 1, collections);
+            saveData(playCount + 1, collections, totalCoins, items, cookedDishes);
           }
         }, 2500);
       };
 
-      const renderHeader = (title, colorClass = "bg-amber-500") => (
-        <div className={`${colorClass} text-white p-4 rounded-t-2xl flex items-center justify-center font-bold text-xl md:text-2xl mb-4 shadow-md sticky top-0 z-10`}>
+      const renderHeader = (title) => (
+        <div className="bg-blue-500 text-white p-4 rounded-t-2xl flex items-center justify-center font-bold text-xl mb-4 shadow-md">
           {title}
         </div>
       );
 
-      // 時間の文字列を生成 (表示用)
-      const formatTime = (h, m) => m === 0 ? `${h}:00` : `${h}:${m < 10 ? '0'+m : m}`;
-      // 時間の文字列を生成 (読み上げ用)
-      const formatSpeakTime = (h, m) => m === 0 ? `${h} o'clock` : `${h} ${m}`;
-
-      // 汎用プルダウン生成コンポーネント
-      const TimeSelect = ({ hour, setHour, minute, setMinute }) => (
-        <div className="flex items-center gap-2 text-lg bg-white p-2 rounded-xl border-2 border-gray-200 shadow-inner w-fit">
-          <select value={hour} onChange={(e) => setHour(parseInt(e.target.value))} className="p-1 md:p-2 border border-gray-300 rounded bg-white font-bold cursor-pointer">
-            {Array.from({length: 12}, (_, i) => i + 1).map(h => <option key={h} value={h}>{h}</option>)}
-          </select>
-          <span className="font-bold text-gray-600">時</span>
-          <select value={minute} onChange={(e) => setMinute(parseInt(e.target.value))} className="p-1 md:p-2 border border-gray-300 rounded bg-white font-bold cursor-pointer">
-            <option value={0}>00</option>
-            <option value={15}>15</option>
-            <option value={30}>30</option>
-            <option value={45}>45</option>
-          </select>
-          <span className="font-bold text-gray-600">分</span>
+      const CharacterMessage = ({ text, jpText, emoji = "🧑", isCom = false, name = "" }) => (
+        <div className="flex flex-col items-center mb-8">
+          {name && <div className="bg-green-600 text-white font-bold px-4 py-1 rounded-full mb-2 shadow-sm text-sm">{name}</div>}
+          <div className={`text-7xl mb-4 ${isCom ? 'bg-green-100' : 'bg-gray-100'} rounded-full w-24 h-24 flex items-center justify-center shadow-inner border-4 border-white`}>{emoji}</div>
+          <div className={`bg-white border-4 ${isCom ? 'border-green-200' : 'border-blue-200'} p-6 rounded-3xl rounded-tl-none shadow-md relative max-w-sm w-full text-left`}>
+            <button onClick={() => speak(text)} className="absolute -top-5 -right-5 bg-blue-100 p-3 rounded-full text-blue-600 hover:bg-blue-200 shadow-sm text-2xl">🔊</button>
+            <p className="text-xl md:text-2xl font-bold text-gray-800 leading-snug">{text}</p>
+            {jpText && <p className="text-gray-500 mt-3 text-sm font-bold">（{jpText}）</p>}
+          </div>
         </div>
       );
 
-      // --- 共通レンダー関数 (入力フォーム) ---
-      const renderInputForm = (title, headerColor, bgColor, icon, questionTitle, hour, setHour, minute, setMinute, textValue, setTextValue, inputPlaceholder, targetMicType, handleNext, isReady, extraDescription = null) => {
-        return (
-          <div className="min-h-screen bg-blue-50 p-4 md:p-8 flex items-center justify-center py-10">
-            <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-0 border-4 border-blue-200 overflow-hidden flex flex-col">
-              {renderHeader(title, headerColor)}
-              <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
-                <div className={`mb-4 ${bgColor} p-6 rounded-2xl border border-gray-200`}>
-                  <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center"><span className="text-3xl mr-3">{icon}</span> {questionTitle}</h3>
-                  
-                  <div className="flex flex-col gap-4">
-                    <TimeSelect hour={hour} setHour={setHour} minute={minute} setMinute={setMinute} />
-                    
-                    {setTextValue && (
-                      <div className="flex flex-col gap-2 mt-2">
-                        {extraDescription && <p className="text-sm md:text-base text-gray-700 font-bold bg-white/70 p-2 rounded inline-block w-fit">{extraDescription}</p>}
-                        <div className="flex items-center gap-2">
-                          <input 
-                            type="text" value={textValue} onChange={(e) => setTextValue(e.target.value)}
-                            placeholder={inputPlaceholder}
-                            className="flex-1 p-4 border-2 border-gray-300 rounded-xl font-bold text-lg"
-                          />
-                          <button 
-                            onClick={() => startJaListening(targetMicType)} disabled={activeMic !== null}
-                            className={`p-4 rounded-xl shadow-md transition flex-shrink-0 ${activeMic === targetMicType ? 'bg-red-500 mic-pulse text-white' : 'bg-white border-2 border-gray-400 text-gray-600 hover:bg-gray-100'}`}
-                          >
-                            <span className="text-2xl">🎤</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="p-4 bg-gray-50 border-t border-gray-200">
-                <button 
-                  onClick={handleNext}
-                  disabled={!isReady || isTranslating}
-                  className={`w-full text-white text-xl font-bold py-4 rounded-xl shadow-md transition flex justify-center items-center ${isReady && !isTranslating ? 'bg-blue-500 hover:bg-blue-600 transform hover:scale-105 active:scale-95' : 'bg-gray-300 cursor-not-allowed'}`}
-                >
-                  {isTranslating ? <span className="animate-pulse">えいごに ほんやく中... 🔄</span> : "つぎへ"}
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      };
+      const InputTimeRow = ({ h, setH, m, setM }) => (
+        <div className="flex items-center justify-center gap-2 text-xl mt-4">
+            <select value={h} onChange={(e) => setH(parseInt(e.target.value))} className="p-3 border-2 border-gray-300 rounded-xl bg-white font-bold">
+                {HOURS.map(num => <option key={num} value={num}>{num}</option>)}
+            </select>
+            <span className="font-bold">:</span>
+            <select value={m} onChange={(e) => setM(e.target.value)} className="p-3 border-2 border-gray-300 rounded-xl bg-white font-bold">
+                {MINS.map(num => <option key={num} value={num}>{num}</option>)}
+            </select>
+        </div>
+      );
 
-      // --- 共通レンダー関数 (発音練習) ---
-      const renderSpeakPractice = (title, displaySentence, speakSentence, targetType, backStep, skipStep, icon) => {
-        const playExample = () => speak(speakSentence);
-        return (
-          <div className="min-h-screen bg-pink-50 p-4 md:p-8 flex items-center justify-center">
-            <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-0 border-4 border-pink-200 text-center overflow-hidden flex flex-col">
-              {renderHeader(title, "bg-pink-500")}
-              
-              <div className="p-6 md:p-8">
-                <div className="bg-pink-100 p-6 md:p-8 rounded-2xl mb-8 border border-pink-200">
-                  <div className="text-2xl md:text-3xl font-bold text-pink-800 leading-loose flex flex-col items-center justify-center">
-                    <span className="text-5xl mb-4">{icon}</span> 
-                    {displaySentence}
-                  </div>
-                  <button onClick={playExample} className="mt-8 flex items-center justify-center mx-auto text-pink-700 hover:text-pink-900 bg-white px-6 py-3 rounded-full shadow-md font-bold transition transform hover:scale-105 border border-pink-300">
-                    <span className="mr-2 text-2xl">🔊</span> おてほんをきく
-                  </button>
-                </div>
-
-                <div className="mb-8">
-                  <button 
-                    onClick={() => startEnListening(targetType)}
-                    disabled={isListening}
-                    className={`p-6 rounded-full shadow-lg transition transform hover:scale-105 active:scale-95 ${isListening ? 'bg-red-500 mic-pulse' : 'bg-blue-500 hover:bg-blue-600'} text-white mx-auto flex items-center justify-center`}
-                  >
-                    <span className="text-4xl">🎤</span>
-                  </button>
-                  <p className="mt-4 text-gray-600 font-bold">{isListening ? "はなしてください..." : "マイクをおして よんでみよう！"}</p>
-                  
-                  {recognitionText && (
-                    <div className="mt-4 p-3 bg-gray-100 rounded-lg text-lg text-gray-700 italic border border-gray-200 max-w-lg mx-auto">
-                      ききとったことば: "{recognitionText}"
-                    </div>
-                  )}
-                  {feedbackMsg && (
-                    <div className={`mt-4 text-xl md:text-2xl font-bold animate-bounce ${feedbackMsg.includes('Excellent') ? 'text-green-500' : 'text-orange-500'}`}>
-                      {feedbackMsg}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-4">
-                  <button 
-                    onClick={() => setStep(backStep)}
-                    className="text-gray-500 underline text-sm py-2 hover:text-gray-700"
-                  >
-                    こたえを 入力しなおす (訂正する)
-                  </button>
-
-                  {failCount >= 3 && (
-                    <button 
-                      onClick={() => proceedToNext(skipStep)}
-                      className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-xl flex items-center justify-center mx-auto transition"
-                    >
-                      <span className="mr-2">⏭️</span> むずかしいので スキップ
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      };
-
-      // === 各画面のレンダリング（メインの分岐） ===
+      // UI レンダリングブロック
+      let content = null;
 
       if (step === 'HOME') {
-        return (
-          <div className="min-h-screen p-4 md:p-8 flex flex-col justify-center">
-            <div className="max-w-3xl w-full mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border-4 border-amber-200">
-              <div className="bg-gradient-to-r from-amber-400 to-orange-500 p-8 text-center text-white">
-                <h1 className="text-3xl md:text-5xl font-extrabold mb-4 drop-shadow-md">えいごで はなそう！</h1>
-                <p className="text-lg bg-white/20 inline-block px-4 py-2 rounded-full font-medium">
-                  🎧 イヤホンを つけましょう 🎧
-                </p>
+        content = (
+          <div className="min-h-screen p-4 md:p-8 flex flex-col justify-center relative bg-blue-50 pb-20">
+            {cookEffect && (
+              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
+                  {cookEffect === 'cooking' ? (
+                    <div className="animate-pulse">
+                      <div className="text-8xl mb-4">🍲</div>
+                      <p className="text-2xl font-bold text-orange-600">おなべで<br/>おりょうり中...</p>
+                    </div>
+                  ) : (
+                    <div className="animate-fade-in-up">
+                      <div className="text-8xl mb-4">✨🍽️✨</div>
+                      <p className="text-gray-500 font-bold mb-2 text-lg">かんせい！</p>
+                      <p className="text-2xl font-bold text-orange-700 mb-8 border-b-2 border-orange-200 pb-4">{cookEffect}</p>
+                      <button onClick={() => setCookEffect(null)} className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg transform transition hover:scale-105">おいしそう！</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            {purchaseEffect && (
+              <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-50">
+                <div className="animate-bounce-in text-9xl drop-shadow-2xl">
+                  {purchaseEffect === 'takenoko' ? '🎋' : '🍠'}
+                </div>
+              </div>
+            )}
+
+            <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 font-bold px-6 py-2 rounded-full border-4 border-yellow-200 shadow-lg text-xl z-10 flex gap-4">
+              <span>🪙 {totalCoins}</span>
+              <span>🎋 {items.takenoko || 0}</span>
+              <span>🍠 {items.satsumaimo || 0}</span>
+            </div>
+            
+            <div className="max-w-2xl w-full mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border-4 border-blue-200 mt-12">
+              <div className="bg-gradient-to-r from-blue-400 to-indigo-500 p-8 text-center text-white">
+                <h1 className="text-3xl md:text-4xl font-extrabold mb-4 drop-shadow-md">えいごで はなそう！<br/><span className="text-2xl text-yellow-300 block mt-2">Perfect Sunday</span></h1>
+                <p className="text-lg bg-white/20 inline-block px-4 py-2 rounded-full font-medium mb-2">🎧 イヤホンを つけましょう 🎧</p>
+                <p className="text-sm font-bold opacity-90">じぶんの 声が うまく 入らない ときは、<br/>イヤホンを とって やってみよう！</p>
               </div>
               
-              <div className="p-6 md:p-8 text-center">
+              <div className="p-8 text-center">
+                {playCount > 0 && (
+                  <div className="mb-6 bg-orange-100 p-4 rounded-xl border-2 border-orange-200 animate-pulse">
+                    <p className="text-orange-700 font-bold">ゲームで コインを あつめて、たくさん<br/>タケノコや さつまいもを ゲットしよう！</p>
+                  </div>
+                )}
+                {playCount > 0 && (
+                  <p className="text-pink-600 font-bold mb-4 text-lg animate-pulse">さっきと ちがうことを 言ってみよう！</p>
+                )}
+
                 <button 
-                  onClick={() => {
-                    setStep('GREETING');
-                    setTimeout(() => speak("Please tell me your perfect Sunday."), 500);
-                  }}
-                  className="bg-red-500 hover:bg-red-600 text-white text-2xl font-bold py-4 px-12 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95 flex items-center justify-center mx-auto mb-8"
+                  onClick={startApp}
+                  className="bg-red-500 hover:bg-red-600 text-white text-2xl font-bold py-4 px-12 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95 mx-auto mb-8 flex items-center"
                 >
                   <span className="mr-2 text-2xl">▶️</span> スタート！
                 </button>
 
-                <div className="bg-amber-50 rounded-2xl p-6 border-2 border-amber-200">
-                  <h2 className="text-xl md:text-2xl font-bold text-amber-700 mb-4 flex items-center justify-center">
-                    <span className="mr-2">⭐</span> あつめたモンスター ({collections.length}/30)
-                  </h2>
-                  <div className="grid grid-cols-5 md:grid-cols-6 gap-2 md:gap-4">
-                    {collections.map(m => (
-                      <div key={m.id} className={`${m.color} p-2 md:p-3 rounded-xl text-center shadow-sm text-2xl md:text-3xl relative group cursor-default`} title={m.name}>
-                        {m.emoji}
-                        <div className="absolute hidden group-hover:block bg-black text-white text-xs p-1 rounded -top-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap z-10">
-                          {m.name}
+                {playCount > 0 && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <div className="bg-green-50 p-4 rounded-2xl border-2 border-green-200 relative overflow-hidden">
+                        <h3 className="font-bold text-green-700 mb-2">🎋 タケノコをかう (10🪙)</h3>
+                        <button onClick={() => buyItem('takenoko', 10)} className="bg-green-500 text-white px-4 py-2 rounded-full font-bold shadow hover:bg-green-600 active:scale-95 relative z-10">かう！</button>
+                      </div>
+                      <div className="bg-purple-50 p-4 rounded-2xl border-2 border-purple-200 relative overflow-hidden">
+                        <h3 className="font-bold text-purple-700 mb-2">🍠 さつまいもをかう (10🪙)</h3>
+                        <button onClick={() => buyItem('satsumaimo', 10)} className="bg-purple-500 text-white px-4 py-2 rounded-full font-bold shadow hover:bg-purple-600 active:scale-95 relative z-10">かう！</button>
+                      </div>
+                    </div>
+
+                    <div className="bg-orange-50 p-4 rounded-2xl border-2 border-orange-200 mb-8">
+                      <h3 className="font-bold text-orange-800 mb-2 text-lg">👨‍🍳 おみせで お料理をつくる</h3>
+                      <p className="text-sm text-orange-700 font-bold mb-3">タケノコと サツマイモが １こずつ ひつようだよ！</p>
+                      <button 
+                        onClick={cookDish} 
+                        disabled={items.takenoko < 1 || items.satsumaimo < 1}
+                        className={`text-white px-6 py-3 rounded-full font-bold shadow text-lg flex items-center justify-center mx-auto transition ${items.takenoko >= 1 && items.satsumaimo >= 1 ? 'bg-orange-500 hover:bg-orange-600 transform hover:scale-105' : 'bg-gray-400 opacity-70 cursor-not-allowed'}`}
+                      >
+                        <span className="mr-2">🍳</span>おりょうりする！
+                      </button>
+                      
+                      {cookedDishes.length > 0 && (
+                        <div className="mt-6 text-left border-t-2 border-orange-200 pt-4">
+                          <p className="font-bold text-orange-800 mb-2">✨ つくった お料理 ({cookedDishes.length}/10)</p>
+                          <ul className="list-disc pl-5 text-sm text-gray-700 font-bold space-y-1">
+                            {cookedDishes.map((dish, i) => <li key={i}>{dish}</li>)}
+                          </ul>
                         </div>
+                      )}
+                    </div>
+
+                    <div className="bg-yellow-50 rounded-2xl p-6 border-2 border-yellow-200">
+                      <h2 className="text-xl font-bold text-yellow-700 mb-4">⭐ あつめたモンスター ({collections.length}/30)</h2>
+                      <div className="grid grid-cols-5 gap-2 md:gap-4">
+                        {collections.map(m => (
+                          <div key={m.id} className={`${m.color} p-2 rounded-xl text-center shadow-sm text-2xl relative group cursor-default`} title={m.name}>
+                            {m.emoji}
+                            <div className="absolute hidden group-hover:block bg-black text-white text-xs p-1 rounded -top-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap z-10">{m.name}</div>
+                          </div>
+                        ))}
+                        {Array.from({ length: 30 - collections.length }).map((_, i) => (
+                          <div key={`empty-${i}`} className="bg-gray-100 p-2 rounded-xl text-center border-2 border-dashed border-gray-300 text-2xl opacity-50">❓</div>
+                        ))}
                       </div>
-                    ))}
-                    {Array.from({ length: 30 - collections.length }).map((_, i) => (
-                      <div key={`empty-${i}`} className="bg-gray-100 p-2 md:p-3 rounded-xl text-center border-2 border-dashed border-gray-300 text-2xl opacity-50">
-                        ❓
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
         );
-      }
-
-      if (step === 'GREETING') {
-        return (
-          <div className="min-h-screen bg-green-50 p-4 md:p-8 flex items-center justify-center">
-            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-0 border-4 border-green-200 text-center overflow-hidden">
-              {renderHeader("コンピューターからの しつもん", "bg-green-500")}
+      } else if (step === 'COM_ASK') {
+        content = (
+          <div className="min-h-screen bg-green-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-green-200 text-center mt-12">
+              {renderHeader("クッマーニからの しつもん")}
+              <CharacterMessage 
+                text="Please tell me your perfect Sunday." 
+                jpText="あなたの 理想の 日曜日を 教えて。" 
+                isCom={true}
+                emoji="🐻"
+                name="クッマーニ"
+              />
+              <button onClick={() => setStep('MY_INPUT_WAKEUP')} className="w-full bg-green-500 hover:bg-green-600 text-white text-xl font-bold py-4 rounded-xl shadow-md">こたえる</button>
+            </div>
+          </div>
+        );
+      } else if (step === 'MY_INPUT_WAKEUP') {
+        content = (
+          <div className="min-h-screen bg-orange-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-orange-200 text-center mt-12">
+              {renderHeader("じぶんの こたえ (1/4)")}
               
-              <div className="p-8">
-                <div className="mb-8 mt-4">
-                  <button onClick={() => speak("Please tell me your perfect Sunday.")} className="bg-green-100 p-5 rounded-full text-green-600 hover:bg-green-200 transition mx-auto flex items-center justify-center mb-6 shadow-sm">
-                    <span className="text-5xl">🔊</span>
-                  </button>
-                  <p className="text-2xl md:text-3xl font-bold text-gray-800 leading-tight">"Please tell me<br/>your perfect Sunday."</p>
-                  <p className="text-gray-500 mt-4 font-medium bg-gray-50 p-3 rounded-lg inline-block">
-                    （あなたの りそうの 日曜日を おしえてください）
+              <div className="bg-white p-6 rounded-2xl mb-8 border-2 border-orange-100 text-center">
+                <p className="text-xl font-bold mb-6 text-orange-800">何時に 起きる？</p>
+                <InputTimeRow h={upHour} setH={setUpHour} m={upMin} setM={setUpMin} />
+              </div>
+              <button onClick={() => setStep('MY_SPEAK_WAKEUP')} className="w-full bg-orange-500 hover:bg-orange-600 text-white text-xl font-bold py-4 rounded-xl shadow-md">つぎへ</button>
+            </div>
+          </div>
+        );
+      } else if (step === 'MY_SPEAK_WAKEUP') {
+        const sentence = `I get up at ${getDisplayTime(upHour, upMin)}.`;
+        const speakSentence = `I get up at ${getSpeakTime(upHour, upMin)}.`;
+        content = (
+          <div className="min-h-screen bg-orange-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-orange-200 text-center mt-12">
+              {renderHeader("えいごで いってみよう！ (1/4)")}
+              <div className="bg-orange-100 p-6 rounded-2xl mb-6">
+                <p className="text-2xl font-bold text-orange-800 mb-2 leading-relaxed">{sentence}</p>
+                <p className="text-sm font-bold text-gray-600 mb-4">（{upHour}時{upMin}分に 起きる）</p>
+                <button onClick={() => speak(speakSentence)} className="mx-auto text-orange-600 bg-white px-4 py-2 rounded-full shadow-sm mt-4 flex items-center"><span className="mr-2">🔊</span>おてほんをきく</button>
+              </div>
+              <div className="mb-8">
+                <button onClick={() => startListening('MY_WAKEUP')} disabled={isListening} className={`p-6 rounded-full shadow-lg ${isListening ? 'bg-red-500 animate-pulse' : 'bg-blue-500'} text-white mx-auto text-4xl`}>🎤</button>
+                <p className="mt-4 text-gray-600 font-bold">{isListening ? "はなしてください..." : "マイクをおして はなす"}</p>
+                {feedbackMsg && (
+                  <div className={`mt-6 text-xl md:text-2xl font-black ${feedbackMsg.includes('Excellent') ? 'text-green-600 border-green-400 bg-green-50' : 'text-red-600 border-red-400 bg-red-50'} p-6 rounded-2xl border-4 text-left leading-relaxed shadow-lg whitespace-pre-line`}>
+                    {feedbackMsg}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-3">
+                <button onClick={() => setStep('MY_INPUT_WAKEUP')} className="text-gray-500 underline text-sm py-2 font-bold">やりなおす（入力にもどる）</button>
+                {failCount >= 2 && <button onClick={() => proceedToNext('MY_WAKEUP')} className="bg-gray-300 hover:bg-gray-400 py-3 px-6 rounded-xl font-bold mx-auto">⏭️ むずかしいので スキップ</button>}
+              </div>
+            </div>
+          </div>
+        );
+      } else if (step === 'MY_INPUT_BREAKFAST') {
+        content = (
+          <div className="min-h-screen bg-red-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-red-200 text-center mt-12">
+              {renderHeader("じぶんの こたえ (2/4)")}
+              
+              <div className="bg-white p-6 rounded-2xl mb-8 border-2 border-red-100 text-left">
+                <p className="text-lg font-bold mb-4 text-red-800">朝ごはんで 食べるものは？</p>
+                <div className="relative mb-4">
+                  <textarea 
+                    value={brkFoodJa} onChange={(e) => setBrkFoodJa(e.target.value)}
+                    placeholder="例：パン、目玉焼き、おにぎり"
+                    className="w-full h-20 p-3 pr-12 border-2 border-gray-300 rounded-xl font-bold resize-none text-sm md:text-base"
+                  />
+                  <button 
+                    onClick={() => startListeningJa(setBrkFoodJa)}
+                    disabled={isListeningJa}
+                    className={`absolute right-2 bottom-3 p-2 rounded-full ${isListeningJa ? 'bg-red-500 animate-pulse text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+                  >🎤</button>
+                </div>
+                <p className="text-lg font-bold mt-6 mb-2 text-red-800 text-center">何時に食べる？</p>
+                <InputTimeRow h={brkHour} setH={setBrkHour} m={brkMin} setM={setBrkMin} />
+              </div>
+              <button onClick={() => handleTranslateFood(brkFoodJa, setBrkFoodEn, 'MY_SPEAK_BREAKFAST')} className="w-full bg-red-500 hover:bg-red-600 text-white text-xl font-bold py-4 rounded-xl shadow-md">つぎへ (えいごにする)</button>
+            </div>
+          </div>
+        );
+      } else if (step === 'MY_SPEAK_BREAKFAST') {
+        const sentence = `I eat ${brkFoodEn} for breakfast at ${getDisplayTime(brkHour, brkMin)}.`;
+        const speakSentence = `I eat ${brkFoodEn} for breakfast at ${getSpeakTime(brkHour, brkMin)}.`;
+        content = (
+          <div className="min-h-screen bg-red-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-red-200 text-center mt-12">
+              {renderHeader("えいごで いってみよう！ (2/4)")}
+              <div className="bg-red-100 p-6 rounded-2xl mb-6">
+                <p className="text-2xl font-bold text-red-800 mb-2 leading-relaxed">{sentence}</p>
+                <p className="text-sm font-bold text-gray-600 mb-4">（{brkHour}時{brkMin}分に 朝ごはんで {brkFoodJa}を食べる）</p>
+                <button onClick={() => speak(speakSentence)} className="mx-auto text-red-600 bg-white px-4 py-2 rounded-full shadow-sm mt-4 flex items-center"><span className="mr-2">🔊</span>おてほんをきく</button>
+              </div>
+              <div className="mb-8">
+                <button onClick={() => startListening('MY_BREAKFAST')} disabled={isListening} className={`p-6 rounded-full shadow-lg ${isListening ? 'bg-red-500 animate-pulse' : 'bg-blue-500'} text-white mx-auto text-4xl`}>🎤</button>
+                <p className="mt-4 text-gray-600 font-bold">{isListening ? "はなしてください..." : "マイクをおして はなす"}</p>
+                {feedbackMsg && (
+                  <div className={`mt-6 text-xl md:text-2xl font-black ${feedbackMsg.includes('Excellent') ? 'text-green-600 border-green-400 bg-green-50' : 'text-red-600 border-red-400 bg-red-50'} p-6 rounded-2xl border-4 text-left leading-relaxed shadow-lg whitespace-pre-line`}>
+                    {feedbackMsg}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-3">
+                <button onClick={() => setStep('MY_INPUT_BREAKFAST')} className="text-gray-500 underline text-sm py-2 font-bold">やりなおす（日本語入力にもどる）</button>
+                {failCount >= 2 && <button onClick={() => proceedToNext('MY_BREAKFAST')} className="bg-gray-300 hover:bg-gray-400 py-3 px-6 rounded-xl font-bold mx-auto">⏭️ むずかしいので スキップ</button>}
+              </div>
+            </div>
+          </div>
+        );
+      } else if (step === 'MY_INPUT_MORNING') {
+        content = (
+          <div className="min-h-screen bg-indigo-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-indigo-200 text-center mt-12">
+              {renderHeader("じぶんの こたえ (3/4)")}
+              
+              <div className="bg-white p-6 rounded-2xl mb-8 border-2 border-indigo-100 text-left">
+                <p className="text-lg font-bold mb-4 text-indigo-800">午前中に したいことは？</p>
+                <div className="relative mb-4">
+                  <textarea 
+                    value={morActJa} onChange={(e) => setMorActJa(e.target.value)}
+                    placeholder="例：公園で あそぶ、テレビを みる、本を 読む"
+                    className="w-full h-20 p-3 pr-12 border-2 border-gray-300 rounded-xl font-bold resize-none text-sm md:text-base"
+                  />
+                  <button 
+                    onClick={() => startListeningJa(setMorActJa)}
+                    disabled={isListeningJa}
+                    className={`absolute right-2 bottom-3 p-2 rounded-full ${isListeningJa ? 'bg-red-500 animate-pulse text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+                  >🎤</button>
+                </div>
+                <p className="text-lg font-bold mt-6 mb-2 text-indigo-800 text-center">何時にする？</p>
+                <InputTimeRow h={morHour} setH={setMorHour} m={morMin} setM={setMorMin} />
+              </div>
+              <button onClick={() => handleTranslateAction(morActJa, setMorActEn, 'MY_SPEAK_MORNING')} className="w-full bg-indigo-500 hover:bg-indigo-600 text-white text-xl font-bold py-4 rounded-xl shadow-md">つぎへ (えいごにする)</button>
+            </div>
+          </div>
+        );
+      } else if (step === 'MY_SPEAK_MORNING') {
+        const sentence = `I ${morActEn} at ${getDisplayTime(morHour, morMin)}.`;
+        const speakSentence = `I ${morActEn} at ${getSpeakTime(morHour, morMin)}.`;
+        content = (
+          <div className="min-h-screen bg-indigo-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-indigo-200 text-center mt-12">
+              {renderHeader("えいごで いってみよう！ (3/4)")}
+              <div className="bg-indigo-100 p-6 rounded-2xl mb-6">
+                <p className="text-2xl font-bold text-indigo-800 mb-2 leading-relaxed">{sentence}</p>
+                <p className="text-sm font-bold text-gray-600 mb-4">（{morHour}時{morMin}分に {morActJa}）</p>
+                <button onClick={() => speak(speakSentence)} className="mx-auto text-indigo-600 bg-white px-4 py-2 rounded-full shadow-sm mt-4 flex items-center"><span className="mr-2">🔊</span>おてほんをきく</button>
+              </div>
+              <div className="mb-8">
+                <button onClick={() => startListening('MY_MORNING')} disabled={isListening} className={`p-6 rounded-full shadow-lg ${isListening ? 'bg-red-500 animate-pulse' : 'bg-blue-500'} text-white mx-auto text-4xl`}>🎤</button>
+                <p className="mt-4 text-gray-600 font-bold">{isListening ? "はなしてください..." : "マイクをおして はなす"}</p>
+                {feedbackMsg && (
+                  <div className={`mt-6 text-xl md:text-2xl font-black ${feedbackMsg.includes('Excellent') ? 'text-green-600 border-green-400 bg-green-50' : 'text-red-600 border-red-400 bg-red-50'} p-6 rounded-2xl border-4 text-left leading-relaxed shadow-lg whitespace-pre-line`}>
+                    {feedbackMsg}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-3">
+                <button onClick={() => setStep('MY_INPUT_MORNING')} className="text-gray-500 underline text-sm py-2 font-bold">やりなおす（日本語入力にもどる）</button>
+                {failCount >= 2 && <button onClick={() => proceedToNext('MY_MORNING')} className="bg-gray-300 hover:bg-gray-400 py-3 px-6 rounded-xl font-bold mx-auto">⏭️ むずかしいので スキップ</button>}
+              </div>
+            </div>
+          </div>
+        );
+      } else if (step === 'MY_INPUT_LUNCH') {
+        content = (
+          <div className="min-h-screen bg-purple-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-purple-200 text-center mt-12">
+              {renderHeader("じぶんの こたえ (4/4)")}
+              
+              <div className="bg-white p-6 rounded-2xl mb-8 border-2 border-purple-100 text-left">
+                <p className="text-lg font-bold mb-4 text-purple-800">昼ごはんで 食べるものは？</p>
+                <div className="relative mb-4">
+                  <textarea 
+                    value={lunFoodJa} onChange={(e) => setLunFoodJa(e.target.value)}
+                    placeholder="例：ラーメン、オムライス、おべんとう"
+                    className="w-full h-20 p-3 pr-12 border-2 border-gray-300 rounded-xl font-bold resize-none text-sm md:text-base"
+                  />
+                  <button 
+                    onClick={() => startListeningJa(setLunFoodJa)}
+                    disabled={isListeningJa}
+                    className={`absolute right-2 bottom-3 p-2 rounded-full ${isListeningJa ? 'bg-red-500 animate-pulse text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+                  >🎤</button>
+                </div>
+                <p className="text-lg font-bold mt-6 mb-2 text-purple-800 text-center">何時に食べる？</p>
+                <InputTimeRow h={lunHour} setH={setLunHour} m={lunMin} setM={setLunMin} />
+              </div>
+              <button onClick={() => handleTranslateFood(lunFoodJa, setLunFoodEn, 'MY_SPEAK_LUNCH')} className="w-full bg-purple-500 hover:bg-purple-600 text-white text-xl font-bold py-4 rounded-xl shadow-md">つぎへ (えいごにする)</button>
+            </div>
+          </div>
+        );
+      } else if (step === 'MY_SPEAK_LUNCH') {
+        const sentence = `I eat ${lunFoodEn} for lunch at ${getDisplayTime(lunHour, lunMin)}.`;
+        const speakSentence = `I eat ${lunFoodEn} for lunch at ${getSpeakTime(lunHour, lunMin)}.`;
+        content = (
+          <div className="min-h-screen bg-purple-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-purple-200 text-center mt-12">
+              {renderHeader("えいごで いってみよう！ (4/4)")}
+              <div className="bg-purple-100 p-6 rounded-2xl mb-6">
+                <p className="text-2xl font-bold text-purple-800 mb-2 leading-relaxed">{sentence}</p>
+                <p className="text-sm font-bold text-gray-600 mb-4">（{lunHour}時{lunMin}分に 昼ごはんで {lunFoodJa}を食べる）</p>
+                <button onClick={() => speak(speakSentence)} className="mx-auto text-purple-600 bg-white px-4 py-2 rounded-full shadow-sm mt-4 flex items-center"><span className="mr-2">🔊</span>おてほんをきく</button>
+              </div>
+              <div className="mb-8">
+                <button onClick={() => startListening('MY_LUNCH')} disabled={isListening} className={`p-6 rounded-full shadow-lg ${isListening ? 'bg-red-500 animate-pulse' : 'bg-blue-500'} text-white mx-auto text-4xl`}>🎤</button>
+                <p className="mt-4 text-gray-600 font-bold">{isListening ? "はなしてください..." : "マイクをおして はなす"}</p>
+                {feedbackMsg && (
+                  <div className={`mt-6 text-xl md:text-2xl font-black ${feedbackMsg.includes('Excellent') ? 'text-green-600 border-green-400 bg-green-50' : 'text-red-600 border-red-400 bg-red-50'} p-6 rounded-2xl border-4 text-left leading-relaxed shadow-lg whitespace-pre-line`}>
+                    {feedbackMsg}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-3">
+                <button onClick={() => setStep('MY_INPUT_LUNCH')} className="text-gray-500 underline text-sm py-2 font-bold">やりなおす（日本語入力にもどる）</button>
+                {failCount >= 2 && <button onClick={() => proceedToNext('MY_LUNCH')} className="bg-gray-300 hover:bg-gray-400 py-3 px-6 rounded-xl font-bold mx-auto">⏭️ むずかしいので スキップ</button>}
+              </div>
+            </div>
+          </div>
+        );
+      } else if (step === 'WORKSHEET_1') {
+        content = (
+          <div className="min-h-screen bg-yellow-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-yellow-200 text-center mt-12">
+              <h2 className="text-3xl font-bold text-yellow-700 mb-6 flex items-center justify-center"><span className="mr-2 text-4xl">📝</span>ワークシートに かこう！ (1/4)</h2>
+              
+              <div className="bg-white border-2 border-gray-300 p-8 rounded-lg shadow-inner mb-8 bg-[url('https://www.transparenttextures.com/patterns/lined-paper-2.png')]">
+                <p className="text-lg md:text-xl font-mono text-gray-800 leading-loose border-b-2 border-dashed border-gray-400 pb-2 text-left mb-4">
+                  I get up at <span className="font-bold text-red-600">{getDisplayTime(upHour, upMin)}</span>.
+                </p>
+              </div>
+              
+              <button onClick={() => setStep('MY_INPUT_BREAKFAST')} className="w-full bg-blue-500 hover:bg-blue-600 text-white text-2xl font-bold py-4 rounded-xl shadow-md">かけた！</button>
+            </div>
+          </div>
+        );
+      } else if (step === 'WORKSHEET_2') {
+        content = (
+          <div className="min-h-screen bg-yellow-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-yellow-200 text-center mt-12">
+              <h2 className="text-3xl font-bold text-yellow-700 mb-6 flex items-center justify-center"><span className="mr-2 text-4xl">📝</span>ワークシートに かこう！ (2/4)</h2>
+              
+              <div className="bg-white border-2 border-gray-300 p-8 rounded-lg shadow-inner mb-8 bg-[url('https://www.transparenttextures.com/patterns/lined-paper-2.png')]">
+                <p className="text-lg md:text-xl font-mono text-gray-800 leading-loose border-b-2 border-dashed border-gray-400 pb-2 text-left mb-4">
+                  I get up at <span className="font-bold text-red-600">{getDisplayTime(upHour, upMin)}</span>.
+                </p>
+                <p className="text-lg md:text-xl font-mono text-gray-800 leading-loose border-b-2 border-dashed border-gray-400 pb-2 text-left mb-4">
+                  I eat <span className="font-bold text-red-600">{brkFoodEn}</span> for breakfast at <span className="font-bold text-red-600">{getDisplayTime(brkHour, brkMin)}</span>.
+                </p>
+              </div>
+              
+              <button onClick={() => setStep('MY_INPUT_MORNING')} className="w-full bg-blue-500 hover:bg-blue-600 text-white text-2xl font-bold py-4 rounded-xl shadow-md">かけた！</button>
+            </div>
+          </div>
+        );
+      } else if (step === 'WORKSHEET_3') {
+        content = (
+          <div className="min-h-screen bg-yellow-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-yellow-200 text-center mt-12">
+              <h2 className="text-3xl font-bold text-yellow-700 mb-6 flex items-center justify-center"><span className="mr-2 text-4xl">📝</span>ワークシートに かこう！ (3/4)</h2>
+              
+              <div className="bg-white border-2 border-gray-300 p-8 rounded-lg shadow-inner mb-8 bg-[url('https://www.transparenttextures.com/patterns/lined-paper-2.png')]">
+                <p className="text-lg md:text-xl font-mono text-gray-800 leading-loose border-b-2 border-dashed border-gray-400 pb-2 text-left mb-4">
+                  I get up at <span className="font-bold text-red-600">{getDisplayTime(upHour, upMin)}</span>.
+                </p>
+                <p className="text-lg md:text-xl font-mono text-gray-800 leading-loose border-b-2 border-dashed border-gray-400 pb-2 text-left mb-4">
+                  I eat <span className="font-bold text-red-600">{brkFoodEn}</span> for breakfast at <span className="font-bold text-red-600">{getDisplayTime(brkHour, brkMin)}</span>.
+                </p>
+                <p className="text-lg md:text-xl font-mono text-gray-800 leading-loose border-b-2 border-dashed border-gray-400 pb-2 text-left mb-4">
+                  I <span className="font-bold text-red-600">{morActEn}</span> at <span className="font-bold text-red-600">{getDisplayTime(morHour, morMin)}</span>.
+                </p>
+              </div>
+              
+              <button onClick={() => setStep('MY_INPUT_LUNCH')} className="w-full bg-blue-500 hover:bg-blue-600 text-white text-2xl font-bold py-4 rounded-xl shadow-md">かけた！</button>
+            </div>
+          </div>
+        );
+      } else if (step === 'WORKSHEET_4') {
+        content = (
+          <div className="min-h-screen bg-yellow-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-yellow-200 text-center mt-12">
+              <h2 className="text-3xl font-bold text-yellow-700 mb-6 flex items-center justify-center"><span className="mr-2 text-4xl">📝</span>ワークシートに かこう！ (4/4)</h2>
+              
+              <div className="bg-white border-2 border-gray-300 p-8 rounded-lg shadow-inner mb-8 bg-[url('https://www.transparenttextures.com/patterns/lined-paper-2.png')]">
+                <p className="text-lg md:text-xl font-mono text-gray-800 leading-loose border-b-2 border-dashed border-gray-400 pb-2 text-left mb-4">
+                  I get up at <span className="font-bold text-red-600">{getDisplayTime(upHour, upMin)}</span>.
+                </p>
+                <p className="text-lg md:text-xl font-mono text-gray-800 leading-loose border-b-2 border-dashed border-gray-400 pb-2 text-left mb-4">
+                  I eat <span className="font-bold text-red-600">{brkFoodEn}</span> for breakfast at <span className="font-bold text-red-600">{getDisplayTime(brkHour, brkMin)}</span>.
+                </p>
+                <p className="text-lg md:text-xl font-mono text-gray-800 leading-loose border-b-2 border-dashed border-gray-400 pb-2 text-left mb-4">
+                  I <span className="font-bold text-red-600">{morActEn}</span> at <span className="font-bold text-red-600">{getDisplayTime(morHour, morMin)}</span>.
+                </p>
+                <p className="text-lg md:text-xl font-mono text-gray-800 leading-loose border-b-2 border-dashed border-gray-400 pb-2 text-left">
+                  I eat <span className="font-bold text-red-600">{lunFoodEn}</span> for lunch at <span className="font-bold text-red-600">{getDisplayTime(lunHour, lunMin)}</span>.
+                </p>
+              </div>
+              
+              <button onClick={() => setStep('ASK_COM_INTRO')} className="w-full bg-blue-500 hover:bg-blue-600 text-white text-2xl font-bold py-4 rounded-xl shadow-md">かけた！</button>
+            </div>
+          </div>
+        );
+      } else if (step === 'ASK_COM_INTRO') {
+        content = (
+          <div className="min-h-screen bg-green-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-green-200 text-center mt-12">
+              {renderHeader("クッマーニに きいてみよう！")}
+              <div className="text-7xl mb-4">🐻</div>
+              <p className="text-xl font-bold text-gray-700 mb-6">つぎは クッマーニに<br/>「あなたの 理想の 日曜日は？」と<br/>きいてみよう！</p>
+              <button onClick={() => setStep('ASK_COM_SPEAK')} className="w-full bg-green-500 hover:bg-green-600 text-white text-xl font-bold py-4 rounded-xl shadow-md">つぎへ</button>
+            </div>
+          </div>
+        );
+      } else if (step === 'ASK_COM_SPEAK') {
+        const sentence = "Please tell me your perfect Sunday.";
+        content = (
+          <div className="min-h-screen bg-green-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-green-200 text-center mt-12">
+              {renderHeader("えいごで きいてみよう！")}
+              <div className="bg-green-100 p-6 rounded-2xl mb-6">
+                <p className="text-2xl font-bold text-green-800 mb-2 leading-relaxed">{sentence}</p>
+                <p className="text-sm font-bold text-gray-600 mb-4">（あなたの 理想の 日曜日を 教えて。）</p>
+                <button onClick={() => speak(sentence)} className="mx-auto text-green-600 bg-white px-4 py-2 rounded-full shadow-sm mt-4 flex items-center"><span className="mr-2">🔊</span>おてほんをきく</button>
+              </div>
+              <div className="mb-8">
+                <button onClick={() => startListening('ASK_COM')} disabled={isListening} className={`p-6 rounded-full shadow-lg ${isListening ? 'bg-red-500 animate-pulse' : 'bg-blue-500'} text-white mx-auto text-4xl`}>🎤</button>
+                <p className="mt-4 text-gray-600 font-bold">{isListening ? "はなしてください..." : "マイクをおして はなす"}</p>
+                {feedbackMsg && (
+                  <div className={`mt-6 text-xl md:text-2xl font-black ${feedbackMsg.includes('Excellent') ? 'text-green-600 border-green-400 bg-green-50' : 'text-red-600 border-red-400 bg-red-50'} p-6 rounded-2xl border-4 text-left leading-relaxed shadow-lg whitespace-pre-line`}>
+                    {feedbackMsg}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-3">
+                {failCount >= 2 && <button onClick={() => proceedToNext('ASK_COM')} className="bg-gray-300 hover:bg-gray-400 py-3 px-6 rounded-xl font-bold mx-auto">⏭️ むずかしいので スキップ</button>}
+              </div>
+            </div>
+          </div>
+        );
+      } else if (step === 'COM_ANSWER') {
+        content = (
+          <div className="min-h-screen bg-green-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-green-200 text-center mt-12">
+              {renderHeader("クッマーニの Perfect Sunday")}
+              
+              <div className="flex flex-col items-center mb-8">
+                <div className="bg-green-600 text-white font-bold px-4 py-1 rounded-full mb-2 shadow-sm text-sm">クッマーニ</div>
+                <div className="text-7xl mb-4 bg-green-100 rounded-full w-24 h-24 flex items-center justify-center shadow-inner border-4 border-white">🐻</div>
+                <div className="bg-white border-4 border-green-200 p-6 rounded-3xl rounded-tl-none shadow-md relative w-full text-left">
+                  <button onClick={() => {
+                    const t = `My perfect Sunday is... I get up at ${getSpeakTime(comData.upHour, comData.upMin)}. I eat ${comData.brkFoodEn} for breakfast at ${getSpeakTime(comData.brkHour, comData.brkMin)}. I ${comData.morActEn} at ${getSpeakTime(comData.morHour, comData.morMin)}. I eat ${comData.lunFoodEn} for lunch at ${getSpeakTime(comData.lunHour, comData.lunMin)}.`;
+                    speak(t, 0.85);
+                  }} className="absolute -top-5 -right-5 bg-blue-100 p-3 rounded-full text-blue-600 hover:bg-blue-200 shadow-sm text-2xl">🔊</button>
+                  <p className="text-lg font-bold text-gray-800 leading-relaxed">
+                    I get up at <span className="text-green-700">{getDisplayTime(comData.upHour, comData.upMin)}</span>.<br/>
+                    I eat <span className="text-green-700">{comData.brkFoodEn}</span> for breakfast at <span className="text-green-700">{getDisplayTime(comData.brkHour, comData.brkMin)}</span>.<br/>
+                    I <span className="text-green-700">{comData.morActEn}</span> at <span className="text-green-700">{getDisplayTime(comData.morHour, comData.morMin)}</span>.<br/>
+                    I eat <span className="text-green-700">{comData.lunFoodEn}</span> for lunch at <span className="text-green-700">{getDisplayTime(comData.lunHour, comData.lunMin)}</span>.
+                  </p>
+                  <p className="text-gray-500 mt-4 text-sm font-bold">
+                    （{comData.upHour}時{comData.upMin}分に 起きる。<br/>
+                    {comData.brkHour}時{comData.brkMin}分に 朝ごはんで {comData.brkFoodJa}を食べる。<br/>
+                    {comData.morHour}時{comData.morMin}分に {comData.morActJa}。<br/>
+                    {comData.lunHour}時{comData.lunMin}分に 昼ごはんで {comData.lunFoodJa}を食べる。）
                   </p>
                 </div>
-
+              </div>
+              
+              <button onClick={() => { 
+                saveWorksheet(); 
+                setStep(playCount === 0 ? 'WORKSHEET_STAMP' : 'WORKSHEET_CHECK'); 
+              }} className="w-full bg-blue-500 hover:bg-blue-600 text-white text-xl font-bold py-4 rounded-xl shadow-md">つぎへ</button>
+            </div>
+          </div>
+        );
+      } else if (step === 'WORKSHEET_CHECK') {
+        content = (
+          <div className="min-h-screen bg-yellow-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-yellow-200 text-center mt-12">
+              <div className="text-6xl mb-6">📑</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-8 leading-relaxed">もう ワークシートは<br/>書いたかな？</h2>
+              
+              <div className="flex flex-col gap-4">
                 <button 
-                  onClick={() => setStep('INPUT_WAKE')}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white text-xl md:text-2xl font-bold py-4 rounded-xl shadow-md transition transform hover:scale-105 active:scale-95"
+                  onClick={prepareQuiz} 
+                  className="w-full bg-green-500 hover:bg-green-600 text-white text-xl font-bold py-4 rounded-xl shadow-md"
                 >
-                  こたえを つくる！
+                  はい（つぎへすすむ）
+                </button>
+                <button 
+                  onClick={() => setStep('WORKSHEET_STAMP')} 
+                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white text-xl font-bold py-4 rounded-xl shadow-md"
+                >
+                  いいえ（ワークシートを見る）
                 </button>
               </div>
             </div>
           </div>
         );
-      }
+      } else if (step === 'WORKSHEET_STAMP') {
+        const displayData = worksheetData || {
+          upEn: `I get up at ${getDisplayTime(upHour, upMin)}.`, upJa: `（${upHour}時${upMin}分に 起きる）`,
+          brkEn: `I eat ${brkFoodEn} for breakfast at ${getDisplayTime(brkHour, brkMin)}.`, brkJa: `（${brkFoodJa}）`,
+          morEn: `I ${morActEn} at ${getDisplayTime(morHour, morMin)}.`, morJa: `（${morHour}時${morMin}分に ${morActJa}）`,
+          lunEn: `I eat ${lunFoodEn} for lunch at ${getDisplayTime(lunHour, lunMin)}.`, lunJa: `（${lunFoodJa}）`
+        };
 
-      // --- ステップごとの入力・発音画面 ---
-
-      if (step === 'INPUT_WAKE') {
-        return renderInputForm("りそうの日曜日をつくろう (1/4)", "bg-blue-500", "bg-blue-50", "🛏️", "なんじに おきる？", wakeHour, setWakeHour, wakeMinute, setWakeMinute, null, null, null, null, () => { setFailCount(0); setStep('SPEAK_WAKE'); }, true);
-      }
-      if (step === 'SPEAK_WAKE') {
-        const sentence = `I get up at ${formatTime(wakeHour, wakeMinute)}.`;
-        const speakText = `I get up at ${formatSpeakTime(wakeHour, wakeMinute)}.`;
-        return renderSpeakPractice("えいごで いってみよう！ (1/4)", sentence, speakText, 'WAKE', 'INPUT_WAKE', 'INPUT_BREAKFAST', "🛏️");
-      }
-
-      if (step === 'INPUT_BREAKFAST') {
-        const isReady = jaBreakfast.trim() && jaBreakfast !== "きいています...";
-        return renderInputForm("りそうの日曜日をつくろう (2/4)", "bg-orange-500", "bg-orange-50", "🍳", "あさごはん", breakfastHour, setBreakfastHour, breakfastMinute, setBreakfastMinute, jaBreakfast, setJaBreakfast, "なにを たべる？ (例: パン)", "breakfast", () => handleTranslate('breakfast'), isReady);
-      }
-      if (step === 'SPEAK_BREAKFAST') {
-        const sentence = `I eat ${engBreakfast} for breakfast at ${formatTime(breakfastHour, breakfastMinute)}.`;
-        const speakText = `I eat ${engBreakfast} for breakfast at ${formatSpeakTime(breakfastHour, breakfastMinute)}.`;
-        return renderSpeakPractice("えいごで いってみよう！ (2/4)", sentence, speakText, 'BREAKFAST', 'INPUT_BREAKFAST', 'INPUT_ACTIVITY', "🍳");
-      }
-
-      if (step === 'INPUT_ACTIVITY') {
-        const isReady = jaActivity.trim() && jaActivity !== "きいています...";
-        return renderInputForm("りそうの日曜日をつくろう (3/4)", "bg-green-500", "bg-green-50", "🏃", "午前中に したいこと", activityHour, setActivityHour, activityMinute, setActivityMinute, jaActivity, setJaActivity, "なにをする？ (例: ゲームをする)", "activity", () => handleTranslate('activity'), isReady, "※「〜をする」というふうに書いてね！");
-      }
-      if (step === 'SPEAK_ACTIVITY') {
-        const sentence = `I ${engActivity} at ${formatTime(activityHour, activityMinute)}.`;
-        const speakText = `I ${engActivity} at ${formatSpeakTime(activityHour, activityMinute)}.`;
-        return renderSpeakPractice("えいごで いってみよう！ (3/4)", sentence, speakText, 'ACTIVITY', 'INPUT_ACTIVITY', 'INPUT_LUNCH', "🏃");
-      }
-
-      if (step === 'INPUT_LUNCH') {
-        const isReady = jaLunch.trim() && jaLunch !== "きいています...";
-        return renderInputForm("りそうの日曜日をつくろう (4/4)", "bg-yellow-500", "bg-yellow-50", "🍔", "ひるごはん", lunchHour, setLunchHour, lunchMinute, setLunchMinute, jaLunch, setJaLunch, "なにを たべる？ (例: パスタ)", "lunch", () => handleTranslate('lunch'), isReady);
-      }
-      if (step === 'SPEAK_LUNCH') {
-        const sentence = `I eat ${engLunch} for lunch at ${formatTime(lunchHour, lunchMinute)}.`;
-        const speakText = `I eat ${engLunch} for lunch at ${formatSpeakTime(lunchHour, lunchMinute)}.`;
-        return renderSpeakPractice("えいごで いってみよう！ (4/4)", sentence, speakText, 'LUNCH', 'INPUT_LUNCH', 'ASK_COM_TIME', "🍔");
-      }
-
-      // --- 続きの画面 ---
-
-      if (step === 'ASK_COM_TIME') {
-        return (
-          <div className="min-h-screen bg-indigo-50 p-4 md:p-8 flex items-center justify-center">
-            <div className="max-w-xl w-full bg-white rounded-3xl shadow-xl p-0 border-4 border-indigo-200 text-center overflow-hidden">
-              {renderHeader("コンピューターに きいてみよう！", "bg-indigo-500")}
+        content = (
+          <div className="min-h-screen bg-yellow-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-6 md:p-8 border-4 border-yellow-200 mt-12">
+              <div className="flex items-center justify-center text-yellow-600 mb-6 border-b-4 border-yellow-100 pb-4">
+                <span className="mr-4 text-4xl">💮</span><h2 className="text-3xl font-bold">ワークシート かんせい！</h2>
+              </div>
               
-              <div className="p-6 md:p-8">
-                <div className="bg-indigo-100 p-6 rounded-2xl mb-8 border border-indigo-200">
-                  <div className="text-2xl md:text-3xl font-bold text-indigo-800 mb-6 leading-relaxed">
-                    <p>"Please tell me</p>
-                    <p>your perfect Sunday."</p>
-                  </div>
-                  <button onClick={() => speak("Please tell me your perfect Sunday.")} className="flex items-center justify-center mx-auto text-indigo-700 hover:text-indigo-900 bg-white px-6 py-3 rounded-full shadow-md font-bold transition transform hover:scale-105">
-                    <span className="mr-2 text-xl">🔊</span> おてほんをきく
-                  </button>
+              <div className="bg-white border-2 border-gray-300 p-6 rounded-lg shadow-inner bg-[url('https://www.transparenttextures.com/patterns/lined-paper-2.png')] mb-8 text-left">
+                <h3 className="font-bold text-xl text-blue-600 mb-4 bg-blue-100 inline-block px-3 py-1 rounded">【わたしの こたえ】</h3>
+                
+                <div className="mb-4">
+                  <div className="text-lg md:text-xl font-mono text-gray-800 leading-loose border-b-2 border-dashed border-gray-400 pb-2">{displayData.upEn}</div>
+                  <div className="text-sm text-gray-500 mt-1 font-bold">{displayData.upJa}</div>
                 </div>
-
+                <div className="mb-4">
+                  <div className="text-lg md:text-xl font-mono text-gray-800 leading-loose border-b-2 border-dashed border-gray-400 pb-2">{displayData.brkEn}</div>
+                  <div className="text-sm text-gray-500 mt-1 font-bold">{displayData.brkJa}</div>
+                </div>
+                <div className="mb-4">
+                  <div className="text-lg md:text-xl font-mono text-gray-800 leading-loose border-b-2 border-dashed border-gray-400 pb-2">{displayData.morEn}</div>
+                  <div className="text-sm text-gray-500 mt-1 font-bold">{displayData.morJa}</div>
+                </div>
+                <div>
+                  <div className="text-lg md:text-xl font-mono text-gray-800 leading-loose border-b-2 border-dashed border-gray-400 pb-2">{displayData.lunEn}</div>
+                  <div className="text-sm text-gray-500 mt-1 font-bold">{displayData.lunJa}</div>
+                </div>
+              </div>
+              
+              <div className="bg-red-50 p-6 rounded-xl border border-red-200 text-center mb-8 shadow-md">
+                <p className="text-red-700 font-bold text-xl mb-3">先生を よんで スタンプを もらいましょう！</p>
+                <p className="text-gray-700 font-bold text-lg">スタンプを もらったら、下のボタンを おしてね。</p>
+              </div>
+              <button onClick={prepareQuiz} className="w-full bg-yellow-500 hover:bg-yellow-600 text-white text-2xl font-bold py-5 rounded-xl flex items-center justify-center shadow-lg transform transition hover:scale-105"><span className="mr-3 text-3xl">💮</span> スタンプをもらった！</button>
+            </div>
+          </div>
+        );
+      } else if (step === 'QUIZ_INTRO') {
+        content = (
+          <div className="min-h-screen bg-indigo-50 p-4 flex items-center justify-center relative">
+            <BackButton />
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 text-center border-4 border-indigo-200 mt-12">
+              <h2 className="text-3xl font-bold text-indigo-600 mb-6">えいかいわ おつかれさま！</h2>
+              <div className="text-6xl mb-6">🔢</div>
+              <p className="text-lg font-bold text-gray-700 mb-8 leading-relaxed">ここからは「数字（１５〜５５）」を えいごで こたえる<br/>クイズだよ！<br/>ぜんぶで ４もん あるよ。</p>
+              <button onClick={() => setStep('QUIZ')} className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-4 px-12 rounded-full text-2xl shadow-md">スタート！</button>
+            </div>
+          </div>
+        );
+      } else if (step === 'QUIZ') {
+        if (quizQuestions.length > 0 && currentQuizIndex < quizQuestions.length) {
+          const num = quizQuestions[currentQuizIndex];
+          content = (
+            <div className="min-h-screen bg-indigo-50 p-4 flex items-center justify-center relative">
+              <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 text-center border-4 border-indigo-200">
+                {renderHeader(`クイズ ${currentQuizIndex + 1} / 4`)}
+                <div className="bg-indigo-100 p-8 rounded-2xl mb-8 shadow-inner">
+                  <p className="text-6xl font-extrabold text-indigo-700 mb-4">{num}</p>
+                  <p className="text-gray-600 font-bold text-xl">えいごで なにかな？</p>
+                  <button onClick={() => speak(NUMBERS[num])} className="mt-6 bg-white px-4 py-2 rounded-full shadow-sm text-indigo-600 font-bold flex mx-auto items-center"><span className="mr-2">🔊</span>こたえをきく (ヒント)</button>
+                </div>
                 <div className="mb-8">
-                  <button 
-                    onClick={() => startEnListening('ASK_COM_TIME')}
-                    disabled={isListening}
-                    className={`p-6 rounded-full shadow-lg transition transform hover:scale-105 active:scale-95 ${isListening ? 'bg-red-500 mic-pulse' : 'bg-blue-500 hover:bg-blue-600'} text-white mx-auto flex items-center justify-center`}
-                  >
-                    <span className="text-4xl">🎤</span>
-                  </button>
+                  <button onClick={() => startListening('QUIZ')} disabled={isListening} className={`p-6 rounded-full shadow-lg ${isListening ? 'bg-red-500 animate-pulse' : 'bg-blue-500'} text-white mx-auto text-4xl`}>🎤</button>
                   <p className="mt-4 text-gray-600 font-bold">{isListening ? "はなしてください..." : "マイクをおして はなす"}</p>
                   
-                  {recognitionText && (
-                    <div className="mt-4 p-3 bg-gray-100 rounded-lg text-lg text-gray-700 italic border border-gray-200">
-                      ききとったことば: "{recognitionText}"
-                    </div>
-                  )}
                   {feedbackMsg && (
-                    <div className={`mt-4 text-xl font-bold ${feedbackMsg.includes('Excellent') ? 'text-green-500' : 'text-orange-500'}`}>
+                    <div className={`mt-6 text-xl md:text-2xl font-black ${feedbackMsg.includes('Excellent') ? 'text-green-600 border-green-400 bg-green-50' : 'text-red-600 border-red-400 bg-red-50'} p-6 rounded-2xl border-4 text-left leading-relaxed shadow-lg whitespace-pre-line`}>
                       {feedbackMsg}
                     </div>
                   )}
                 </div>
-
-                <div className="flex flex-col gap-4">
-                  {failCount >= 3 && (
-                    <button 
-                      onClick={() => proceedToNext('COM_ANSWER')}
-                      className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-xl flex items-center justify-center mx-auto transition"
-                    >
-                      <span className="mr-2">⏭️</span> むずかしいので スキップ
-                    </button>
-                  )}
-                </div>
+                {failCount >= 2 && <button onClick={() => proceedToNext('QUIZ')} className="bg-gray-300 hover:bg-gray-400 py-3 px-6 rounded-xl font-bold mx-auto">⏭️ スキップ</button>}
               </div>
             </div>
-          </div>
-        );
-      }
-
-      if (step === 'COM_ANSWER') {
-        const playComAnswer = () => {
-          speak("I get up at 8 o'clock. I eat pancakes for breakfast at 9 o'clock. I read books at 10 30. I eat pasta for lunch at 12 30.");
-        };
-
-        return (
-          <div className="min-h-screen bg-teal-50 p-4 md:p-8 flex items-center justify-center">
-            <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-0 border-4 border-teal-200 text-center overflow-hidden">
-              {renderHeader("コンピューターの こたえ", "bg-teal-500")}
-              
-              <div className="p-6 md:p-8">
-                <div className="mb-8 mt-2">
-                  <div className="bg-gray-200 w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center text-5xl shadow-inner border-4 border-gray-300">
-                    💻
-                  </div>
-                  <button onClick={playComAnswer} className="bg-teal-100 p-4 rounded-full text-teal-600 hover:bg-teal-200 transition mx-auto flex items-center justify-center mb-6 shadow-sm">
-                    <span className="text-4xl">🔊</span>
-                  </button>
-                  
-                  <div className="bg-teal-50 p-6 rounded-2xl text-left border border-teal-100">
-                    <div className="text-xl md:text-2xl font-bold text-gray-800 leading-loose flex flex-col gap-2">
-                      <p>"I get up at 8:00.</p>
-                      <p>I eat pancakes for breakfast at 9:00.</p>
-                      <p>I read books at 10:30.</p>
-                      <p>I eat pasta for lunch at 12:30."</p>
-                    </div>
-                  </div>
-                  
-                  <div className="text-gray-600 mt-4 text-sm font-medium bg-gray-50 p-4 rounded-lg inline-block text-left">
-                    <p>（わたしは 8時におきます。）</p>
-                    <p>（9時に あさごはんに パンケーキをたべます。）</p>
-                    <p>（10時30分に 本を よみます。）</p>
-                    <p>（12時30分に ひるごはんに パスタをたべます。）</p>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setStep('NOTEBOOK')}
-                  className="w-full bg-teal-500 hover:bg-teal-600 text-white text-xl font-bold py-4 rounded-xl shadow-md transition transform hover:scale-105 active:scale-95"
-                >
-                  つぎへ
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      }
-
-      if (step === 'NOTEBOOK') {
-        const sentences = [
-          `I get up at ${formatTime(wakeHour, wakeMinute)}.`,
-          `I eat ${engBreakfast} for breakfast at ${formatTime(breakfastHour, breakfastMinute)}.`,
-          `I ${engActivity} at ${formatTime(activityHour, activityMinute)}.`,
-          `I eat ${engLunch} for lunch at ${formatTime(lunchHour, lunchMinute)}.`
-        ];
-
-        return (
-          <div className="min-h-screen bg-yellow-50 p-4 md:p-8 flex items-center justify-center">
-            <div className="max-w-3xl w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-yellow-300">
-              <div className="flex items-center justify-center text-yellow-600 mb-6">
-                <span className="mr-4 text-4xl">📖</span>
-                <h2 className="text-2xl md:text-3xl font-bold">ノートに かきましょう</h2>
-              </div>
-              
-              <div className="bg-white border-2 border-gray-300 p-6 md:p-8 rounded-lg shadow-inner mb-8 relative"
-                   style={{backgroundImage: "linear-gradient(#e5e7eb 1px, transparent 1px)", backgroundSize: "100% 3rem", lineHeight: "3rem"}}>
-                <div className="absolute top-0 left-8 bottom-0 w-px bg-red-300"></div>
-                <p className="text-gray-600 font-bold text-base md:text-lg bg-white/90 inline-block px-2 ml-10 -mt-2 leading-normal">
-                  あとで はっぴょうするので、じぶんの こたえを ノートに うつしてね。
-                </p>
-                
-                <div className="ml-10 mt-6 text-xl md:text-2xl font-mono text-gray-800 flex flex-col pt-2">
-                  <div className="whitespace-nowrap overflow-x-auto custom-scrollbar pb-1">{sentences[0]}</div>
-                  <div className="whitespace-nowrap overflow-x-auto custom-scrollbar pb-1">{sentences[1]}</div>
-                  <div className="whitespace-nowrap overflow-x-auto custom-scrollbar pb-1">{sentences[2]}</div>
-                  <div className="whitespace-nowrap overflow-x-auto custom-scrollbar pb-1">{sentences[3]}</div>
-                </div>
-              </div>
-
-              <div className="bg-red-50 p-6 rounded-xl border border-red-200 text-center mb-8">
-                <p className="text-red-700 font-bold text-lg mb-2">ノートが かけたら、先生を よんで スタンプを もらいましょう！</p>
-                <p className="text-gray-600">スタンプを もらったら、下のボタンを おしてね。</p>
-              </div>
-
-              <button 
-                onClick={() => setStep('GACHA')}
-                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white text-2xl font-bold py-5 rounded-xl shadow-lg transform transition hover:scale-105 active:scale-95 flex items-center justify-center"
-              >
-                <span className="mr-2 text-3xl">💮</span> スタンプをもらった！
-              </button>
-            </div>
-          </div>
-        );
-      }
-
-      if (step === 'GACHA') {
-        return (
-          <div className="min-h-screen bg-indigo-900 p-4 md:p-8 flex items-center justify-center overflow-hidden relative">
+          );
+        }
+      } else if (step === 'GACHA') {
+        content = (
+          <div className="min-h-screen bg-indigo-900 p-4 flex items-center justify-center relative overflow-hidden">
             <div className="absolute inset-0 opacity-50 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-700 via-indigo-900 to-black"></div>
-
             <div className="max-w-lg w-full bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 text-center relative z-10 border border-white/20">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500 mb-8 drop-shadow-lg">
-                おたのしみ ガチャ！
-              </h2>
-
+              <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500 mb-8">おたのしみ ガチャ！</h2>
               {!currentGachaMonster ? (
                 <div className="mb-12">
                   {isRolling ? (
                     <div className="flex flex-col items-center justify-center">
                       <p className="text-yellow-300 font-bold text-2xl mb-8 animate-pulse">なにがでるかな...？</p>
-                      <div className="w-48 h-48 mx-auto bg-white rounded-full flex items-center justify-center shadow-[0_0_80px_rgba(255,255,255,0.8)] mb-8 border-4 border-yellow-300 transform transition-all duration-100 scale-110">
-                        <span className="text-8xl filter drop-shadow-md">{rollEmoji}</span>
-                      </div>
-                      <div className="flex justify-center gap-6 text-4xl">
-                         <span className="animate-spin">✨</span>
-                         <span className="animate-bounce">🌟</span>
-                         <span className="animate-spin">✨</span>
+                      <div className="w-48 h-48 mx-auto bg-white rounded-full flex items-center justify-center mb-8 border-4 border-yellow-300 scale-110">
+                        <span className="text-8xl">{rollEmoji}</span>
                       </div>
                     </div>
                   ) : (
                     <>
-                      <div className="w-48 h-48 mx-auto bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(236,72,153,0.5)] animate-bounce mb-8 border-4 border-white/30">
+                      <div className="w-48 h-48 mx-auto bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center animate-bounce mb-8">
                         <span className="text-7xl">🎁</span>
                       </div>
-                      <button 
-                        onClick={rollGacha}
-                        className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white text-2xl md:text-3xl font-black py-5 px-10 rounded-full shadow-2xl transform transition hover:scale-110 active:scale-95 border-4 border-yellow-200 w-full"
-                      >
-                        ガチャを まわす！
-                      </button>
+                      <button onClick={rollGacha} className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-3xl font-black py-5 px-12 rounded-full border-4 border-yellow-200 shadow-2xl hover:scale-105 transform transition">ガチャを まわす！</button>
                     </>
                   )}
                 </div>
               ) : (
                 <div className="mb-8 animate-fade-in-up">
                   <p className="text-yellow-300 font-bold text-xl mb-4">ゲットした モンスターは…</p>
-                  <div className={`${currentGachaMonster.color} w-64 h-64 mx-auto rounded-full flex flex-col items-center justify-center shadow-[0_0_60px_rgba(255,255,255,0.4)] mb-6 border-8 border-white`}>
-                    <span className="text-8xl mb-2 filter drop-shadow-md">{currentGachaMonster.emoji}</span>
+                  <div className={`${currentGachaMonster.color} w-64 h-64 mx-auto rounded-full flex items-center justify-center mb-6 border-8 border-white shadow-xl`}>
+                    <span className="text-8xl mb-2">{currentGachaMonster.emoji}</span>
                   </div>
-                  <h3 className="text-3xl md:text-4xl font-extrabold text-white mb-8 drop-shadow-md">{currentGachaMonster.name}</h3>
-                  
-                  <button 
-                    onClick={() => {
-                      setCurrentGachaMonster(null);
-                      setStep('HOME');
-                    }}
-                    className="bg-blue-500 hover:bg-blue-600 text-white text-xl font-bold py-4 px-8 rounded-full shadow-lg flex items-center justify-center mx-auto transition transform hover:scale-105 w-full md:w-auto"
-                  >
-                    <span className="mr-2">🏠</span> さいしょに もどる
-                  </button>
+                  <h3 className="text-4xl font-extrabold text-white mb-8 drop-shadow">{currentGachaMonster.name}</h3>
+                  <button onClick={() => setStep('MINIGAME_INTRO')} className="bg-yellow-500 hover:bg-yellow-600 text-white text-2xl font-bold py-4 px-8 rounded-full shadow-lg w-full transform transition hover:scale-105">つぎへ！</button>
                 </div>
               )}
             </div>
           </div>
         );
+      } else if (step === 'MINIGAME_INTRO') {
+        content = (
+          <div className="min-h-screen bg-green-50 p-4 flex items-center justify-center relative">
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 text-center border-4 border-green-200">
+              <h2 className="text-3xl font-bold text-green-600 mb-6">コインあつめ ゲーム！</h2>
+              <div className="bg-green-100 p-6 rounded-2xl mb-8">
+                <div className="text-6xl mb-4">🪙🏃‍♂️</div>
+                <p className="text-lg font-bold text-gray-700 leading-relaxed text-left">
+                  キーボードの <span className="bg-white px-2 py-1 rounded shadow-sm border">↑</span> <span className="bg-white px-2 py-1 rounded shadow-sm border">↓</span> <span className="bg-white px-2 py-1 rounded shadow-sm border">←</span> <span className="bg-white px-2 py-1 rounded shadow-sm border">→</span> や、<br/>
+                  がめんの ボタンを おして<br/>
+                  モンスターを うごかそう！<br/>
+                  <br/>
+                  せいげんじかん 内に、<br/>
+                  コイン（🪙）を たくさん あつめてね！
+                </p>
+              </div>
+              <button onClick={() => setStep('MINIGAME')} className="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-12 rounded-full text-2xl shadow-md w-full">スタート！</button>
+            </div>
+          </div>
+        );
+      } else if (step === 'MINIGAME') {
+        const gameMonsters = collections.length > 0 ? collections : (currentGachaMonster ? [currentGachaMonster] : []);
+        content = (
+          <MiniGame monsters={gameMonsters} onFinish={(coins) => {
+            setLastEarnedCoins(coins);
+            const newTotal = totalCoins + coins;
+            saveData(playCount, collections, newTotal, items, cookedDishes);
+            setStep('RESULT');
+          }} />
+        );
+      } else if (step === 'RESULT') {
+        content = (
+          <div className="min-h-screen bg-yellow-50 p-4 flex items-center justify-center relative">
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-yellow-200 text-center animate-fade-in-up">
+              <h2 className="text-3xl font-bold text-yellow-600 mb-6">ゲーム おつかれさま！</h2>
+              <div className="text-6xl mb-6">🎉</div>
+              <p className="text-2xl font-bold text-gray-700 mb-4">あつめたコイン: <span className="text-yellow-500 text-4xl">{lastEarnedCoins}</span></p>
+              <p className="text-lg font-bold text-gray-500 mb-4">ぜんぶで {totalCoins} コインになったよ！</p>
+              
+              <div className="bg-orange-100 p-4 rounded-xl border-2 border-orange-200 mb-8">
+                <p className="text-orange-700 font-bold text-lg">ホームがめんで コインをつかって<br/>タケノコや さつまいもを かってみよう！</p>
+              </div>
+              
+              <button onClick={() => { setCurrentGachaMonster(null); setStep('HOME'); }} className="bg-blue-500 hover:bg-blue-600 text-white text-xl font-bold py-4 px-8 rounded-full flex items-center justify-center mx-auto shadow-md transform transition hover:scale-105">
+                <span className="mr-2">🏠</span> さいしょに もどる
+              </button>
+            </div>
+          </div>
+        );
+      } else if (step === 'TRANSLATING') {
+        content = (
+          <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center">
+            <div className="text-4xl font-bold text-blue-600 mb-8 animate-pulse">えいごに ほんやく中...</div>
+            <div className="text-6xl animate-spin">🌍</div>
+          </div>
+        );
       }
 
-      return null;
+      // ルートで全体をラッピングし、フローティングボタンとモーダルを共通管理
+      return (
+        <div className="min-h-screen relative font-sans touch-manipulation">
+          {content}
+
+          {/* Worksheet Floating Button */}
+          {worksheetData && !['HOME', 'WORKSHEET_1', 'WORKSHEET_2', 'WORKSHEET_3', 'WORKSHEET_4', 'ASK_COM_INTRO', 'ASK_COM_SPEAK', 'WORKSHEET_STAMP', 'WORKSHEET_CHECK', 'QUIZ_INTRO', 'QUIZ', 'GACHA', 'MINIGAME_INTRO', 'MINIGAME', 'RESULT', 'TRANSLATING'].includes(step) && (
+            <button 
+              onClick={() => setShowWorksheet(true)} 
+              className="fixed bottom-6 right-6 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 p-4 rounded-full shadow-2xl z-40 text-3xl border-4 border-white transition transform hover:scale-110"
+            >
+              📑<span className="text-xs font-bold block -mt-1 text-center">ワークシート</span>
+            </button>
+          )}
+
+          {/* Worksheet Modal */}
+          {showWorksheet && worksheetData && (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2 md:p-4 backdrop-blur-sm animate-fade-in-up">
+              <div className="bg-white rounded-3xl p-6 md:p-8 max-w-2xl w-full relative border-4 border-yellow-300 shadow-2xl bg-[url('https://www.transparenttextures.com/patterns/lined-paper-2.png')] max-h-[95vh] overflow-y-auto">
+                <button 
+                  onClick={() => setShowWorksheet(false)} 
+                  className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl font-bold bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center shadow z-10 border-2 border-gray-300"
+                >
+                  ✖
+                </button>
+                <h3 className="text-2xl font-bold text-yellow-700 mb-6 flex items-center border-b-2 border-yellow-200 pb-2"><span className="mr-2 text-3xl">📑</span> ワークシート</h3>
+                
+                <div className="grid grid-cols-1 gap-8">
+                  <div className="bg-white/90 p-6 rounded-2xl border-4 border-blue-200 shadow-md">
+                    <h4 className="font-bold text-blue-700 text-xl mb-4 bg-blue-100 px-4 py-2 rounded-lg inline-block shadow-sm">【わたしの こたえ】</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-lg md:text-xl font-mono font-bold text-blue-800 border-b-2 border-dashed border-blue-200 pb-1">{worksheetData.upEn}</p>
+                        <p className="text-sm font-bold text-gray-500">{worksheetData.upJa}</p>
+                      </div>
+                      <div>
+                        <p className="text-lg md:text-xl font-mono font-bold text-blue-800 border-b-2 border-dashed border-blue-200 pb-1">{worksheetData.brkEn}</p>
+                        <p className="text-sm font-bold text-gray-500">{worksheetData.brkJa}</p>
+                      </div>
+                      <div>
+                        <p className="text-lg md:text-xl font-mono font-bold text-blue-800 border-b-2 border-dashed border-blue-200 pb-1">{worksheetData.morEn}</p>
+                        <p className="text-sm font-bold text-gray-500">{worksheetData.morJa}</p>
+                      </div>
+                      <div>
+                        <p className="text-lg md:text-xl font-mono font-bold text-blue-800 border-b-2 border-dashed border-blue-200 pb-1">{worksheetData.lunEn}</p>
+                        <p className="text-sm font-bold text-gray-500">{worksheetData.lunJa}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
     }
 
-    // Reactアプリの描画
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
